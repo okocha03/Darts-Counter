@@ -555,6 +555,13 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute
 @media (max-height:740px){#mPad .key{height:clamp(52px,8.6vh,90px)}.display.mx{min-height:clamp(56px,8vh,90px)}}
 .display .val{font-size:clamp(54px,9vh,80px)}
 .dblbtns button{height:clamp(40px,5.8vh,52px)}
+#mPad .dblrow{flex-direction:row;align-items:center;gap:8px;padding:4px 6px 4px 10px}
+#mPad .dblrow .lbl{flex:1;font-size:13px;line-height:1.15}
+#mPad .dblbtns{flex:none;width:58%;gap:5px}
+#mPad .dblbtns button{height:clamp(30px,4.2vh,38px);font-size:20px;border-radius:8px}
+#mPad:has(.dblrow) .key{height:clamp(44px,8.6vh,90px)}
+@media (max-height:800px){#mPad:has(.dblrow) .key{height:clamp(40px,6.6vh,90px)}#mPad:has(.dblrow) .display.mx{min-height:48px}}
+@media (max-height:660px){#mPad:has(.dblrow) .key{height:40px}#mPad:has(.dblrow) .display.mx{min-height:42px}#mPad:has(.dblrow) .display.mx .val{font-size:40px}}
 .mp-r{font-size:clamp(36px,6.6vh,58px)}
 .mp:not(.on) .mp-i b{color:var(--mute)}
 .mco{font-size:15px;color:var(--mute);text-align:center}
