@@ -1467,7 +1467,7 @@ function botVisit(rest,DO,A){
     (state.botVisits||[]).forEach(function(v){p+=v.score;d+=v.darts;});
     return {avg:d?p/d*3:null,n:(state.botVisits||[]).length};
   }
-  function dblText(h,a){return a?h+'/'+a+' · '+pf.format(h/a*100)+' %':'–';}
+  function dblText(h,a){return a?pf.format(h/a*100)+' % ('+h+'/'+a+')':'–';}
   function totals(){
     var pts=0,darts=0;
     state.visits.forEach(function(v){pts+=v.score;darts+=v.darts;});
@@ -3865,7 +3865,7 @@ function botVisit(rest,DO,A){
   function pcResOf(x){var w=x.r.won;return w===true?'<span class="res w">S</span>':w===false?'<span class="res l">N</span>':'<span class="res">–</span>';}
   /* Details eines Trainings oder Spiels (nicht X01) im Player Center, passend zur Art */
   function pcTrainItems(r){
-    var pc=function(h,a){return a?pf.format(h/a*100)+' %':'–';}, k=r.kind, it;
+    var pc=function(h,a){return dblText(h,a);}, k=r.kind, it;
     var bw=function(m){var ks=Object.keys(m||{}).filter(function(x){return m[x][1];}).sort(function(a,b){return m[b][0]/m[b][1]-m[a][0]/m[a][1];});return [ks.length?ks[0]:'–',ks.length>1?ks[ks.length-1]:'–'];};
     if(k==='party'){
       it=(r.ex||[]).slice();
@@ -3907,7 +3907,7 @@ function botVisit(rest,DO,A){
     var r=x.r, it;
     if(x.t==='g'){
       it=[['Ø 3 Darts',fmtAvg(gameAvg(r))],['Darts',fmt(r.darts)],['First 9 Ø',r.f9D?fmtAvg(r.f9P/r.f9D*3):'–'],['100+',r.c100||0],['140+',r.c140||0],['180',r.c180||0]];
-      if(r.mode!=='up')it=it.concat([['High Finish',r.hf||'–'],['Doppelquote',r.dblAtt?pf.format(r.dblHit/r.dblAtt*100)+' %':'–']]);
+      if(r.mode!=='up')it=it.concat([['High Finish',r.hf||'–'],['Doppelquote',dblText(r.dblHit,r.dblAtt)]]);
       it.push(['Beste Aufnahme',r.best||'–']);
     }else{
       it=pcTrainItems(r);
@@ -4121,7 +4121,7 @@ function botVisit(rest,DO,A){
     hist.training.forEach(function(r){if(r.kind==='cricket'&&r.darts){crM+=r.marks||0;crD+=r.darts;}});
     var k=function(l,v,m){return '<div class="pc-k'+(m?' m':'')+'"><small>'+l+'</small><b>'+v+'</b></div>';};
     $('pcTop').innerHTML='<div class="pc-kp">'+k('Ø 3 Darts · X01',fmtAvg(a.avg),true)+k('Bestes Ø',fmtAvg(a.best))+k('First 9 Ø',fmtAvg(a.f9Avg))+
-      k('Doppelquote',a.dblAtt?pf.format(a.dblHit/a.dblAtt*100)+' %':'–')+k('High Finish',a.hf||'–')+k('100+',fmt(c100))+k('180',fmt(a.c180))+
+      k('Doppelquote',dblText(a.dblHit,a.dblAtt))+k('High Finish',a.hf||'–')+k('100+',fmt(c100))+k('180',fmt(a.c180))+
       k('Spiele',fmt(games.length))+k('Trainings',fmt(hist.training.length))+k('Cricket MPR',crD?af.format(crM/crD*3):'–')+'</div>';
     renderForm();renderWeek();renderAch();
     var bestG=null;games.forEach(function(g){if(g.darts>=9&&(bestG==null||gameAvg(g)>gameAvg(bestG)))bestG=g;});
@@ -4741,7 +4741,7 @@ function botVisit(rest,DO,A){
       });
       if(r){legPts.push(sc);if(lh>maxHitsLeg)maxHitsLeg=lh;}
     });
-    var q=darts?pf.format(hits/darts*100)+' %':'–', mx=legPts.length?Math.max.apply(null,legPts):null, avg=legPts.length?legPts.reduce(function(a,b){return a+b;},0)/legPts.length:null;
+    var q=dblText(hits,darts), mx=legPts.length?Math.max.apply(null,legPts):null, avg=legPts.length?legPts.reduce(function(a,b){return a+b;},0)/legPts.length:null;
     var f=function(v){return v==null?'–':fmt(Math.round(v));};
     if(g==='halve')rows=[['Ø Punkte pro Leg',f(avg)],['Meiste Punkte in einem Leg',f(mx)],['Meiste Treffer in einem Leg',maxHitsLeg],['Trefferquote',q],['Beste Runde',bestRound||'–'],['Halbiert',halved+'×']];
     else if(g==='bobs'){
@@ -4811,7 +4811,7 @@ function botVisit(rest,DO,A){
   }
   function renderPartyPad(leg,turn){
     var c=pgCalc(leg), me=c.st[turn], g=M.game, tgt=pgTarget(turn,me), h='';
-    $('mCo').innerHTML=esc(mName(turn))+(M.ps[turn].bot?' wirft …':' ist dran')+' · Ziel <b>'+esc(tgt)+'</b>';
+    $('mCo').innerHTML='Ziel <b>'+esc(tgt)+'</b>';$('mCo').hidden=false;
     if(M.ps[turn].bot)return '<p class="hint" style="text-align:center;margin:20px 0">Der Bot wirft gleich.</p>';
     if(g==='atc'){h='<p class="hint" style="margin:0;text-align:center">Wie viele Felder hast du der Reihe nach getroffen?</p>'+pgHitButtons(Math.min(3,c.end-me.sc));}
     else if(g==='bobs'){h='<p class="hint" style="margin:0;text-align:center">Treffer auf '+esc(tgt)+' ('+bobsVal(me.round)+' Punkte pro Treffer, ohne Treffer minus '+bobsVal(me.round)+')</p>'+pgHitButtons(3);}
@@ -5095,7 +5095,7 @@ function botVisit(rest,DO,A){
       var isBot=!!M.ps[turn].bot, h='';
       if(mParty()){h=renderPartyPad(leg,turn);}
       else if(cr){
-        $('mCo').innerHTML=esc(mName(turn))+(isBot?' wirft …':' ist dran');
+        $('mCo').innerHTML='';$('mCo').hidden=true;
         if(isBot)h='<p class="hint" style="text-align:center;margin:20px 0">Der Bot wirft gleich.</p>';
         else{
           h='<div class="slots cr-slots">';
@@ -5108,7 +5108,7 @@ function botVisit(rest,DO,A){
         }
       }else{
         var r=mRest(leg,turn), xcs=mXDart()?mCur.reduce(function(a,d){return a+d.v;},0):0, rt=mXDart()?(mCur.length<3?routeText(r-xcs,M.DO,3-mCur.length):null):routeText(r,M.DO,3);
-        $('mCo').innerHTML=(isBot?esc(mName(turn))+' wirft …':esc(mName(turn))+' ist dran')+(rt&&!isBot&&settings.co!==false?' · Checkout <b>'+rt+'</b>':'');
+        var coT=rt&&!isBot&&settings.co!==false?'Checkout <b>'+rt+'</b>':'';$('mCo').innerHTML=coT;$('mCo').hidden=!coT;
         if(isBot){
           h='<p class="hint" style="text-align:center;margin:20px 0">Der Bot wirft gleich.</p>';
         }else if(mPend){
@@ -5202,7 +5202,7 @@ function botVisit(rest,DO,A){
     else if(!mParty())rows=rows.concat([['Ø 3 Darts',function(i){return fmtAvg(mPlayerStats(i).avg);}],['First 9 Ø',function(i){return fmtAvg(mPlayerStats(i).f9);}],
        ['60+',function(i){return mPlayerStats(i).b60;}],['100+',function(i){return mPlayerStats(i).b100;}],['140+',function(i){return mPlayerStats(i).b140;}],
        ['180',function(i){return mPlayerStats(i).c180;}],['High Finish',function(i){return mPlayerStats(i).hf||'–';}],
-       ['Doppelquote',function(i){var s=mPlayerStats(i);return s.dblAtt?pf.format(s.dblHit/s.dblAtt*100)+' %':'–';}],
+       ['Doppelquote',function(i){var s=mPlayerStats(i);return dblText(s.dblHit,s.dblAtt);}],
        ['Darts',function(i){return fmt(mPlayerStats(i).darts);}]]);
     if(M.game!=='killer'&&M.game!=='halve'&&M.game!=='bobs'&&M.game!=='shanghai')rows.push(['Bestes Leg',function(i){var b=mBestLeg(i);return b==null?'–':b+' Darts';}]);
     return rows.filter(function(r){return M.setsTo>1||r[0]!=='Sets';});
@@ -5880,6 +5880,9 @@ function botVisit(rest,DO,A){
 '{0} runter Double-In':['{0} décompte Double-In','{0} down double-in','{0} erof Double-In'],
 'Hoch bis {0}':['Comptage jusqu\'à {0}','Count up to {0}','Op bis {0}'],
 'Doppelquote bisher: –':['Taux de doubles jusqu\'ici : –','Double rate so far: –','Duebelquote bis elo: –'],
+'Doppelquote bisher: {0} % ({1}/{2})':['Taux de doubles jusqu\'ici : {0} % ({1}/{2})','Double rate so far: {0} % ({1}/{2})','Duebelquote bis elo: {0} % ({1}/{2})'],
+'Doppelquote {0} % ({1}/{2})':['Taux de doubles {0} % ({1}/{2})','Double rate {0} % ({1}/{2})','Duebelquote {0} % ({1}/{2})'],
+'{0} % ({1}/{2})':['{0} % ({1}/{2})','{0}% ({1}/{2})','{0} % ({1}/{2})'],
 'Doppelquote bisher: {0}/{1}':['Taux de doubles jusqu\'ici : {0}/{1}','Double rate so far: {0}/{1}','Duebelquote bis elo: {0}/{1}'],
 'Doppelquote bisher:':['Taux de doubles jusqu\'ici :','Double rate so far:','Duebelquote bis elo:'],
 'Doppelquote':['Taux de doubles','Double rate','Duebelquote'],
