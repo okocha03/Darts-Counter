@@ -418,7 +418,8 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute
 .db-board svg{display:block;width:100%;max-width:340px;margin:0 auto;height:auto}
 .db-leg{display:flex;justify-content:center;gap:12px;font-size:12px;color:var(--mute);flex-wrap:wrap}
 .db-q{display:flex;flex-direction:column;gap:5px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px}
-.db-q div{display:grid;grid-template-columns:44px 1fr 48px;align-items:center;gap:8px;font-size:14px}
+.db-q div{display:grid;grid-template-columns:44px 1fr 86px;align-items:center;gap:8px;font-size:14px}
+.db-q div span:last-child{text-align:right;white-space:nowrap}.db-q div span small{font-size:11px;color:var(--mute)}
 .db-q div i{display:block;height:11px;border-radius:4px;background:#3fbf7f;min-width:3px}
 .db-q div i.m{background:var(--amber)}.db-q div i.l{background:#e2647a}
 .db-q div span:last-child{text-align:right;font-family:var(--display);font-weight:800;font-size:17px}
@@ -3455,9 +3456,9 @@ function botVisit(rest,DO,A){
     return o;
   }
   function dbList(m,n){
-    var l=DB_ALL.filter(function(k){return m[k]&&m[k][1];}).map(function(k){return {k:k,q:m[k][0]/m[k][1]};}).sort(function(a,b){return a.q-b.q;}).slice(0,n);
+    var l=DB_ALL.filter(function(k){return m[k]&&m[k][1];}).map(function(k){return {k:k,q:m[k][0]/m[k][1],h:m[k][0],a:m[k][1]};}).sort(function(a,b){return a.q-b.q||b.a-a.a;}).slice(0,n);
     if(!l.length)return '';
-    return '<div class="db-q">'+l.map(function(x){var pc=Math.round(x.q*100);return '<div><span>'+x.k+'</span><i class="'+(x.q<.25?'l':x.q<.4?'m':'')+'" style="width:'+Math.max(2,pc)+'%"></i><span>'+pc+' %</span></div>';}).join('')+'</div>';
+    return '<div class="db-q">'+l.map(function(x){var pc=Math.round(x.q*100);return '<div><span>'+x.k+'</span><i class="'+(x.q<.25?'l':x.q<.4?'m':'')+'" style="width:'+Math.max(2,pc)+'%"></i><span>'+pc+' % <small>('+x.h+'/'+x.a+')</small></span></div>';}).join('')+'</div>';
   }
   function dbRender(){
     var h='', b=$('dbBody');
@@ -3481,7 +3482,7 @@ function botVisit(rest,DO,A){
       var R=DB.res, all=allDbf();
       h='<div class="db-board">'+dbBoard(R.f)+'</div><div class="db-leg"><span style="color:#3fbf7f">● ab 40 %</span><span style="color:var(--amber)">● 25–39 %</span><span style="color:#e2647a">● unter 25 %</span></div>'+
         '<div class="pc-kp"><div class="pc-k"><small>Quote</small><b>'+(R.n?Math.round(R.h/R.n*100):0)+' %</b></div><div class="pc-k"><small>Zu tief</small><b>'+(R.n-R.h?Math.round(R.s/(R.n-R.h)*100):0)+' %</b></div><div class="pc-k"><small>Draussen</small><b>'+(R.n-R.h?Math.round(R.o/(R.n-R.h)*100):0)+' %</b></div></div>'+
-        '<div class="pc-sec" style="margin:4px 0 0">Schwächste zuerst</div>'+(dbList(R.f,6)||'<p class="hint" style="margin:0">Noch keine Würfe.</p>')+
+        '<div class="pc-sec" style="margin:4px 0 0">Alle Doppel · schwächste zuerst</div>'+(dbList(R.f,99)||'<p class="hint" style="margin:0">Noch keine Würfe.</p>')+
         '<p class="hint" style="margin:0">Zu tief und Draussen zählen nur die Darts daneben. Die Liste oben gilt für dieses Training, im Player Center siehst du alle Doppel zusammen.</p>'+
         '<div class="sheet-actions" style="margin-top:0"><button class="btn" type="button" id="dbHome">Zur Startseite</button><button class="btn primary" type="button" id="dbWeak">Schwächste 5 üben</button></div>';
     }
@@ -4140,7 +4141,7 @@ function botVisit(rest,DO,A){
     var dbAll=pcMode==='dbl'?allDbf():null;
     mh+='<div class="pc-kp">'+k(lab[0],pcModeFmt(pcMode,avg),true)+k(lab[1],pcModeFmt(pcMode,best))+k('Partien',fmt(mr.length))+k('Siege',fmt(wins))+'</div>';
     mh+=mr.length?'<div class="pc-gl" style="margin-top:6px">'+mr.slice(-5).reverse().map(function(x){return pcRow(x,false);}).join('')+'</div>':'<p class="hint" style="margin:6px 0 0">Noch keine Partien in diesem Spiel.</p>';
-    if(dbAll&&Object.keys(dbAll).length)mh+='<div class="pc-sec">Alle Doppel (Training und Matches)</div><div class="db-board">'+dbBoard(dbAll)+'</div><div class="pc-sec">Schwächste Doppel</div>'+dbList(dbAll,5);
+    if(dbAll&&Object.keys(dbAll).length)mh+='<div class="pc-sec">Alle Doppel (Training und Matches)</div><div class="db-board">'+dbBoard(dbAll)+'</div><div class="pc-sec">Alle Doppel · schwächste zuerst</div>'+dbList(dbAll,99);
     $('pcModes').innerHTML=mh;
     $('pcH2H').innerHTML='<div class="pc-sec">Bilanz gegen andere</div>'+pcH2H(all);
     var ad='<div class="pc-admin">';
@@ -5428,6 +5429,8 @@ function botVisit(rest,DO,A){
 '● unter 25 %':['● moins de 25 %','● under 25 %','● ënner 25 %'],
 'Zu tief':['Trop bas','Too low','Ze déif'],
 'Draussen':['Dehors','Outside','Dobaussen'],
+'Alle Doppel':['Tous les doubles','All doubles','All Duebelen'],
+'schwächste zuerst':['les plus faibles d\'abord','weakest first','schwächst als éischt'],
 'Schwächste zuerst':['Les plus faibles d\'abord','Weakest first','Schwächst als éischt'],
 'Schwächste Doppel':['Doubles les plus faibles','Weakest doubles','Schwächst Duebelen'],
 'Zu tief und Draussen zählen nur die Darts daneben.':['Trop bas et Dehors ne comptent que les fléchettes ratées.','Too low and Outside only count the missed darts.','Ze déif an Dobaussen zielen nëmmen d\'Darts dernieft.'],
@@ -6790,7 +6793,7 @@ function botVisit(rest,DO,A){
     function fit(){
       busy=false;
       ids.forEach(function(id){var el=vis(id), a=el&&el.querySelector('.app');if(!a)return;
-        a.style.zoom='';var ch=el.clientHeight, sh=el.scrollHeight, r=ch/sh;
+        a.style.zoom='';if(el.querySelector('#trDone:not([hidden]),#mDone:not([hidden]),.db-q'))return;var ch=el.clientHeight, sh=el.scrollHeight, r=ch/sh;
         if(sh>ch&&r>0.75)a.style.zoom=String(Math.floor(r*1000)/1000);});
       var m=$('app');if(!m)return;m.style.zoom='';
       var cover=ids.concat(['home','mSetup','settings']).some(vis);
