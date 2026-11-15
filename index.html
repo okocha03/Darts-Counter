@@ -534,6 +534,7 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute
 .mp.on{border-color:var(--red);box-shadow:inset 0 3px 0 var(--red)}
 .mp.win{border-color:var(--green);box-shadow:inset 0 3px 0 var(--green)}
 .mp-n{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-d{float:right;margin-left:6px;font-size:12px;font-weight:600;color:var(--mute);line-height:20px}
 .mp-n i{font-style:normal;color:var(--green);font-size:11px;vertical-align:2px}
 .mp-r{font-family:var(--display);font-weight:800;font-size:clamp(40px,13vw,58px);line-height:1.05;font-variant-numeric:tabular-nums}
 .mp.on .mp-r{color:var(--chalk)}
@@ -5084,9 +5085,10 @@ function botVisit(rest,DO,A){
         big=fmt(mRest(leg,i));
         lgB();bx.push(['Ø',st.avg==null?'–':pf.format(Math.round(st.avg*10)/10)]);bx.push(['Zuletzt',last?(last.bust?'Bust':last.score):'–']);
       }
+      var ldN=0;leg.vs.forEach(function(v){if(v.p!==i)return;ldN+=typeof v.darts==='number'?v.darts:Array.isArray(v.darts)?v.darts.length:Array.isArray(v.xd)?v.xd.length:3;});
       var info='<div class="mp-i" style="grid-template-columns:repeat('+bx.length+',minmax(0,1fr))">'+bx.map(function(x){return '<div><small>'+x[0]+'</small><b>'+x[1]+'</b></div>';}).join('')+'</div>';
       return '<div class="mp'+(cr||M.game==='killer'?' sm':'')+(i===turn?' on':'')+(t.winner===i?' win':'')+'">'+
-        '<div class="mp-n">'+(leg.starter===i&&!M.done?'<i title="Anwurf">●</i> ':'')+esc(mName(i))+'</div>'+
+        '<div class="mp-n"><span class="mp-d">'+ldN+' Darts</span>'+(leg.starter===i&&!M.done?'<i title="Anwurf">●</i> ':'')+esc(mName(i))+'</div>'+
         '<div class="mp-r">'+big+'</div>'+info+(line?'<div class="mp-s">'+line+'</div>':'')+'</div>';
     }).join('')+(cr?mCrBoard(leg):''));
     var play=$('mPlay'), done=$('mDone');
