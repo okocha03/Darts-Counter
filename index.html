@@ -555,10 +555,29 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute
 @media (max-height:740px){#mPad .key{height:clamp(52px,8.6vh,90px)}.display.mx{min-height:clamp(56px,8vh,90px)}}
 .display .val{font-size:clamp(54px,9vh,80px)}
 .dblbtns button{height:clamp(40px,5.8vh,52px)}
-#mPad .dblrow{flex-direction:row;align-items:center;gap:8px;padding:4px 6px 4px 10px}
-#mPad .dblrow .lbl{flex:1;font-size:13px;line-height:1.15}
-#mPad .dblbtns{flex:none;width:58%;gap:5px}
-#mPad .dblbtns button{height:clamp(30px,4.2vh,38px);font-size:20px;border-radius:8px}
+.dblrow{flex-direction:row;align-items:center;gap:8px;padding:4px 6px 4px 10px}
+.dblrow .lbl{flex:1;font-size:13px;line-height:1.15}
+.dblrow .lbl small{font-size:11px}
+.dblbtns{flex:none;width:58%;gap:5px}
+.dblbtns button{height:clamp(30px,4.2vh,38px);font-size:20px;border-radius:8px}
+.ph{height:clamp(46px,7vh,84px);font-size:clamp(26px,4.4vh,40px)}
+.ph small{font-size:11px}
+#train .score .big{font-size:clamp(44px,9vh,96px);margin:0 0 4px}
+#train:has(.tr-padwrap) .score .big,#train:has(.hv-grid) .score .big,#train:has(.cr-board) .score .big{font-size:clamp(40px,7vh,80px)}
+#train:has(.tr-padwrap) .tile,#train:has(.hv-grid) .tile,#train:has(.cr-board) .tile{padding:5px 8px}
+#train:has(.tr-padwrap) .tile .v,#train:has(.hv-grid) .tile .v{font-size:clamp(18px,3.2vh,28px)}
+#train .tr-padwrap .key{height:clamp(40px,6.4vh,64px)}
+#train .tr-padwrap .display{min-height:clamp(46px,7vh,96px)}
+#train .tr-padwrap .display .val{font-size:clamp(36px,6vh,80px)}
+.hv-grid .nb{height:clamp(34px,5.2vh,48px)}
+.hv-all{height:clamp(34px,5vh,44px)}
+.cr-row{height:clamp(21px,3.3vh,30px)}
+.hv-head{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin:0 0 6px}
+.hv-head .slots{margin-top:0}
+.hv-head .hv-sum{margin:0}
+#match:has(.cr-board) .mp-r{font-size:clamp(30px,5.4vh,58px)}
+#match .cr-keys .nb{height:clamp(36px,5.6vh,54px)}
+.mult{height:clamp(32px,4.8vh,40px)}
 #mPad:has(.dblrow) .key{height:clamp(44px,8.6vh,90px)}
 @media (max-height:800px){#mPad:has(.dblrow) .key{height:clamp(40px,6.6vh,90px)}#mPad:has(.dblrow) .display.mx{min-height:48px}}
 @media (max-height:660px){#mPad:has(.dblrow) .key{height:40px}#mPad:has(.dblrow) .display.mx{min-height:42px}#mPad:has(.dblrow) .display.mx .val{font-size:40px}}
@@ -2786,16 +2805,15 @@ function botVisit(rest,DO,A){
   }
   function hvSum(cur){return cur.reduce(function(a,d){return a+d.v;},0);}
   function hvPad(t,cur,sc){
-    var f=hvFields(t), grid=f.length>3, h='<div class="slots cr-slots">', i;
+    var f=hvFields(t), grid=f.length>3, h='<div class="hv-head"><div class="slots cr-slots">', i;
     for(i=0;i<3;i++)h+=cur[i]?'<span class="slot filled">'+esc(cur[i].l)+'</span>':'<span class="slot">·</span>';
     h+='</div>';
     var sum=hvSum(cur);
-    h+='<p class="hv-sum">'+(cur.length?'Diese Aufnahme: <b>'+sum+'</b> Punkte':'Tippe pro Dart das getroffene Feld an')+'</p>';
+    h+='<p class="hv-sum">'+(cur.length?'Diese Aufnahme: <b>'+sum+'</b> Punkte':'Tippe pro Dart das getroffene Feld an')+'</p></div>';
     h+='<div class="board '+(grid?'hv-grid':'hv-keys')+'">'+(grid?'':'<button class="nb miss" type="button" data-hvl="–" data-hvv="0">Daneben</button>')+
       f.map(function(x){return '<button class="nb" type="button" data-hvl="'+x[0]+'" data-hvv="'+x[1]+'">'+x[0]+'</button>';}).join('')+
       (grid?'<button class="nb miss" type="button" style="grid-column:span '+(f.length%5?5-f.length%5:5)+'" data-hvl="–" data-hvv="0">Daneben</button>':'')+'</div>';
     h+='<button class="hv-all" type="button" data-hvall="1">'+(cur.length?'Rest daneben':'Alle 3 daneben')+'</button>';
-    h+='<p class="hint" style="margin:6px 0 0;text-align:center">'+(cur.length&&!sum||!cur.length?'Ohne Treffer wird dein Stand halbiert.':'Getroffen, kein Halbieren.')+'</p>';
     return h;
   }
   function scoreCalc(r){
@@ -6759,6 +6777,24 @@ function botVisit(rest,DO,A){
         });
       });
     }).catch(function(){}).then(function(){renderBk();});
+  })();
+  /* Einpassen: in Spielen und Trainings soll nie gescrollt werden. Passt der Inhalt knapp nicht, wird er leicht verkleinert. */
+  (function(){
+    var ids=['match','train','dblView'], busy=false;
+    function vis(id){var e=document.getElementById(id);return e&&!e.hidden?e:null;}
+    function fit(){
+      busy=false;
+      ids.forEach(function(id){var el=vis(id), a=el&&el.querySelector('.app');if(!a)return;
+        a.style.zoom='';var ch=el.clientHeight, sh=el.scrollHeight, r=ch/sh;
+        if(sh>ch&&r>0.75)a.style.zoom=String(Math.floor(r*1000)/1000);});
+      var m=$('app');if(!m)return;m.style.zoom='';
+      var cover=ids.concat(['home','mSetup','settings']).some(vis);
+      if(!cover){var d=document.scrollingElement, ch2=innerHeight, sh2=d.scrollHeight, r2=ch2/sh2;if(sh2>ch2&&r2>0.75)m.style.zoom=String(Math.floor(r2*1000)/1000);}
+    }
+    function q(){if(!busy){busy=true;requestAnimationFrame(fit);}}
+    var mo=new MutationObserver(q);
+    ids.concat(['app','home']).forEach(function(id){var el=document.getElementById(id);if(el)mo.observe(el,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['hidden','class']});});
+    window.addEventListener('resize',q);q();
   })();
 })();
 </script>
