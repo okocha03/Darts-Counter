@@ -1,1 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#000"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#000"/><rect x="56" y="56" width="400" height="400" rx="60" fill="none" stroke="#fdbb30" stroke-width="8" opacity=".6"/><text x="256" y="338" text-anchor="middle" font-family="Barlow,Arial,sans-serif" font-weight="800" font-size="230" fill="#fdbb30" letter-spacing="-6">BZ</text></svg>
