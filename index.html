@@ -901,6 +901,7 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute
       <div class="t-sec">Training</div>
       <div class="t-train">
         <button class="mtile" type="button" data-hk="k121"><span class="nm">121 Checkout</span><span class="who">Checkout üben</span></button>
+        <button class="mtile" type="button" data-hk="k170"><span class="nm">170</span><span class="who">12, 9, 6 Darts gegen den Wixxer</span></button>
         <button class="mtile" type="button" data-hk="dbl"><span class="nm">Doppel</span><span class="who">D1–D20 und Bull</span></button>
         <button class="mtile" type="button" data-hk="score"><span class="nm">Scoring 99</span><span class="who">99 Darts auf ein Triple</span></button>
         <button class="mtile" type="button" data-hk="up"><span class="nm">Hochzählen</span><span class="who">Punkte sammeln, z. B. bis 100.000</span></button>
@@ -2528,6 +2529,7 @@ function botVisit(rest,DO,A){
   function trainInput(n){
     if(!run||run.done)return;
     if(run.kind==='bull'){run.seq.push(n);saveRun();renderTrain();return;}
+    if(run.kind==='k170'){if(n>k170Calc(run).lim)return;run.seq.push(n);saveRun();if(xOver()){finishRun(false);return;}renderTrain();return;}
     if(run.kind==='k121'){
       run.seq.push(n);saveRun();
       if(xOver()){finishRun(false);return;}
@@ -2678,7 +2680,7 @@ function botVisit(rest,DO,A){
     }
     var k=run.kind;
     run=null;saveRun();closeTrain();
-    if(k==='bull'){showHome();return;}
+    if(k==='bull'||k==='k170'){showHome();return;}
     if(MS_GAMES[k])openMatchSetup(k);else{showHome();openSetupFor(k);fromHome=true;}
   });
   $('trAgain').addEventListener('click',function(){startRun(run.kind,run.kind==='atc'?run.variant:run.kind==='k121'?run.rounds:run.kind==='score'?run.target:run.kind==='cricket'?{mode:run.mode,avg:run.botAvg}:run.chId);});
@@ -2782,6 +2784,15 @@ function botVisit(rest,DO,A){
     if(v>bestV)bestV=v;
     return {b25:b25,b50:b50,hits:b25+b50,att:r.seq.length,pts:pts,bestV:bestV};
   }
+  /* 170: zuerst mit 12, dann 9, dann 6 Darts checken. Nicht geschafft = Punkt für den Wixxer, bei 4 ist es verloren */
+  var K170=[12,9,6];
+  function k170Calc(r){
+    var lv=0,me=0,wx=0,won=false,over=false,darts=0,fails=[0,0,0];
+    r.seq.forEach(function(x){if(over)return;
+      if(x>0){me++;darts+=x;if(lv===2){won=true;over=true;}else lv++;}
+      else{wx++;darts+=K170[lv];fails[lv]++;if(wx>=4)over=true;}});
+    return {lv:lv,lim:K170[lv],me:me,wx:wx,won:won,over:over,darts:darts,att:r.seq.length,fails:fails};
+  }
   function k121Calc(r){
     /* x: 0 = nicht geschafft, 3/6/9 = mit so vielen Darts gecheckt (1 = alte Einträge).
        Mit 3 Darts gecheckt: die nächste Zahl ist fest. Nicht geschafft: zurück auf die feste Zahl (am Anfang 121). Ohne Ende, bis man aufhört. */
@@ -2842,6 +2853,9 @@ function botVisit(rest,DO,A){
     dbl:{name:function(r){return 'Doppel-Training · '+(r.order==='rand'?'zufällig':r.order==='weak'?'schwächste':'D1 bis Bull');},value:function(r){return r.att?r.hits/r.att*100:null;},
       fmt:function(v){return v==null?'–':pf.format(v)+' %';},unit:'Quote',title:'Doppelquote pro Training',tile:'Ø Quote',
       result:function(r){return r.hits+'/'+r.att+' · '+(r.att?Math.round(r.hits/r.att*100):0)+' %';},status:function(r){return r.early?'abgebrochen':'fertig';}},
+    k170:{name:function(){return '170';},value:function(r){return r.me!=null?r.me:null;},
+      fmt:function(v){return v==null?'–':pf.format(v)+' von 3';},unit:'Stufen',title:'Geschaffte Stufen pro Spiel',tile:'Ø Stufen',
+      result:function(r){return (r.won?'Gewonnen':r.early?'Abgebrochen':'Verloren')+' · '+r.me+':'+r.wx;},status:function(r){return r.won?'gewonnen':r.early?'abgebrochen':'verloren';}},
     bull:{name:function(){return 'Bull-Training';},value:function(r){return r.att?r.hits/r.att*100:null;},
       fmt:function(v){return v==null?'–':pf.format(v)+' %';},unit:'Bull-Quote',title:'Bull-Quote pro Training',tile:'Ø Bull-Quote',
       result:function(r){return r.hits+'/'+r.att+' · '+(r.att?Math.round(r.hits/r.att*100):0)+' %';},status:function(){return 'fertig';}},
@@ -2860,6 +2874,7 @@ function botVisit(rest,DO,A){
   function xRecord(rec){
     if(run.kind==='cricket'){var cc=crCalc(run);rec.aw=crAwSum(run.turns.filter(function(t){return t.who==='p';}).map(function(t){return t.darts;}));rec.mode=run.mode;rec.botAvg=run.botAvg;rec.rounds=cc.rounds;rec.darts=cc.darts.p;rec.marks=cc.tot.p;
       rec.won=cc.winner==='p';rec.ptsP=cc.pts.p;rec.ptsB=cc.pts.b;rec.hits=cc.tot.p;rec.att=cc.darts.p;rec.early=!cc.winner;return;}
+    if(run.kind==='k170'){var kc=k170Calc(run);rec.won=kc.won;rec.me=kc.me;rec.wx=kc.wx;rec.lv=kc.lv;rec.hits=kc.me;rec.att=kc.att;rec.darts=kc.darts;rec.early=!kc.over;return;}
     if(run.kind==='bull'){var bc=bullCalc(run);rec.hits=bc.hits;rec.att=bc.att;rec.b25=bc.b25;rec.b50=bc.b50;rec.pts=bc.pts;rec.bestV=bc.bestV;rec.early=false;return;}
     if(run.kind==='k121'){var a=k121Calc(run);rec.rounds=run.rounds;rec.best=a.best;rec.hits=a.hits;rec.att=a.att;rec.end=a.target;rec.floor=a.floor;rec.darts=a.darts;rec.c3=a.c3;rec.early=false;}
     else if(run.kind==='halve'){var h=halveCalc(run);rec.score=h.score;rec.hits=h.hits;rec.att=h.round;rec.early=!h.over;}
@@ -2869,6 +2884,7 @@ function botVisit(rest,DO,A){
   function xOver(){
     if(run.kind==='k121')return k121Calc(run).over;
     if(run.kind==='bull')return false;
+    if(run.kind==='k170')return k170Calc(run).over;
     if(run.kind==='halve')return halveCalc(run).over;
     return scoreCalc(run).over;
   }
@@ -2915,6 +2931,18 @@ function botVisit(rest,DO,A){
       morph(acts,'<button class="tr-btn" type="button" data-t="0"><span class="n">✕</span><span class="s">Daneben</span></button>'+
         '<button class="tr-btn hit" type="button" data-t="25"><span class="n">25</span><span class="s">Bull</span></button>'+
         '<button class="tr-btn hit" type="button" data-t="50"><span class="n">50</span><span class="s">Bullseye</span></button>');
+    }else if(run.kind==='k170'){
+      var kc=k170Calc(run);
+      $('trTitle').textContent='170';
+      $('trBigLabel').textContent='Checke 170 mit';
+      $('trBigRight').textContent='Stufe '+(kc.lv+1)+' von 3';
+      big.textContent=kc.lim+' Darts';
+      $('trTarget').innerHTML=run.done?'':'Weg: <b style="font-size:20px">T20 · T20 · Bull</b>';
+      $('trStats').innerHTML=tile('Du',kc.me+' / 3',true)+tile('Wixxer',kc.wx+' / 4')+tile('Versuche',fmt(kc.att))+tile('Darts',fmt(kc.darts));
+      acts.className='tr-actions four';
+      var ks=[];for(var kd=3;kd<=kc.lim;kd++)ks.push(kd);
+      morph(acts,'<button class="tr-btn" type="button" data-t="0"><span class="n">✕</span><span class="s">Nicht geschafft</span></button>'+
+        ks.map(function(n){return '<button class="tr-btn hit" type="button" data-t="'+n+'"><span class="n">'+n+'</span><span class="s">Darts</span></button>';}).join(''));
     }else if(run.kind==='k121'){
       var a=k121Calc(run);
       $('trTitle').textContent='121 Checkout';
@@ -2954,6 +2982,9 @@ function botVisit(rest,DO,A){
       if(run.kind==='bull'){
         $('trDoneTitle').textContent='Training fertig';
         $('trDoneText').textContent=r.hits+' von '+r.att+' Darts im Bull ('+(r.att?pf.format(r.hits/r.att*100):'0')+' %), davon '+r.b50+'× Bullseye.'+(run.record?' Neuer Rekord!':'');
+      }else if(run.kind==='k170'){
+        $('trDoneTitle').textContent=r.won?'Gewonnen!':r.early?'Beendet':'Verloren';
+        $('trDoneText').textContent=r.won?'Du hast alle drei Stufen geschafft. Der Wixxer hat '+r.wx+' von 4 Punkten.':r.early?'Du hast '+r.me+' von 3 Stufen geschafft, der Wixxer hat '+r.wx+' Punkte.':'Der Wixxer hat 4 Punkte. Du bist auf Stufe '+(r.lv+1)+' hängen geblieben ('+K170[r.lv]+' Darts).';
       }else if(run.kind==='k121'){
         $('trDoneTitle').textContent='Session vorbei';
         $('trDoneText').textContent=(r.best?'Höchster Checkout: '+r.best+'. ':'Kein Checkout geschafft. ')+r.hits+' von '+r.att+' Versuchen geschafft.'+(r.c3?' Mit 3 Darts: '+r.c3+'×.':'')+(run.record?' Neuer Rekord!':'');
@@ -3881,6 +3912,8 @@ function botVisit(rest,DO,A){
       else if(r.mode==='bot')it.unshift(['Punkte',r.ptsP+':'+r.ptsB]);
     }else if(k==='bull'){
       it=[['Bull-Quote',pc(r.hits,r.att)],['Bull (25)',fmt(r.b25||0)],['Bullseye (50)',fmt(r.b50||0)],['Bullseye-Quote',pc(r.b50||0,r.att)],['Beste Aufnahme',r.bestV||'–'],['Darts',fmt(r.att)]];
+    }else if(k==='k170'){
+      it=[['Ergebnis',r.won?'Gewonnen':r.early?'Abgebrochen':'Verloren'],['Du : Wixxer',r.me+' : '+r.wx],['Stufen geschafft',r.me+' von 3'],['Versuche',fmt(r.att)],['Darts',fmt(r.darts||0)]];
     }else if(k==='k121'){
       it=[['Höchster Checkout',r.best||'–'],['Checkouts geschafft',r.hits+' von '+r.att],['Quote',pc(r.hits,r.att)]];
       if(r.c3!=null)it.push(['Mit 3 Darts gecheckt',r.c3]);
@@ -3925,7 +3958,7 @@ function botVisit(rest,DO,A){
     return '<button type="button" class="pc-g'+(best?' best':'')+'" data-pcg="'+esc(id)+'"><div class="row">'+(best?'<span class="res">★</span>':pcResOf(x))+
       '<span class="t"><span>'+esc(pcTitleOf(x))+'</span><small>'+esc(pcSubOf(x))+'</small></span><span class="v">'+pcValOf(x)+'</span></div>'+(pcOpenId===id+(best?'*':'')?pcDetail(x):'')+'</button>';
   }
-  var PC_MODES=[['x01','X01'],['cricket','Cricket'],['shanghai','Shanghai'],['killer','Killer'],['atc','Around the Clock'],['halve','Halve-It'],['bobs',"Bob's 27"],['k121','121 Checkout'],['dbl','Doppel'],['bull','Bull'],['score','Scoring 99'],['ch','Challenge']];
+  var PC_MODES=[['x01','X01'],['cricket','Cricket'],['shanghai','Shanghai'],['killer','Killer'],['atc','Around the Clock'],['halve','Halve-It'],['bobs',"Bob's 27"],['k121','121 Checkout'],['k170','170'],['dbl','Doppel'],['bull','Bull'],['score','Scoring 99'],['ch','Challenge']];
   function pcModeRecs(k,all){
     return all.filter(function(x){
       var r=x.r;
@@ -3943,14 +3976,15 @@ function botVisit(rest,DO,A){
     if(k==='atc')return r.att?r.hits/r.att*100:null;
     if(k==='killer')return r.legs?r.legsW/r.legs*100:null;
     if(k==='k121')return r.best||null;
+    if(k==='k170')return r.me!=null?r.me:null;
     if(k==='dbl'||k==='bull')return r.att?r.hits/r.att*100:null;
     if(k==='score')return r.att?r.pts/r.att:null;
     if(k==='ch')return r.tasksTotal?r.tasksDone/r.tasksTotal*100:null;
     return null;
   }
   var PC_MLAB={dbl:['Ø Quote','Beste Quote'],bull:['Ø Bull-Quote','Beste Quote'],x01:['Ø 3 Darts','Bestes Ø'],cricket:['Ø MPR','Beste MPR'],halve:['Ø Punkte','Rekord'],bobs:['Ø Punkte','Rekord'],shanghai:['Ø Punkte','Rekord'],
-    atc:['Trefferquote','Beste Quote'],killer:['Legs gewonnen','Beste'],k121:['Ø Höchster','Höchster'],score:['Ø 3 Darts','Bestes Ø'],ch:['Ø geschafft','Beste']};
-  function pcModeFmt(k,v){if(v==null)return '–';if(k==='atc'||k==='killer'||k==='ch'||k==='dbl')return pf.format(v)+' %';if(k==='x01'||k==='score')return fmtAvg(v);if(k==='cricket')return af.format(v);return fmt(Math.round(v));}
+    atc:['Trefferquote','Beste Quote'],killer:['Legs gewonnen','Beste'],k121:['Ø Höchster','Höchster'],k170:['Ø Stufen','Am weitesten'],score:['Ø 3 Darts','Bestes Ø'],ch:['Ø geschafft','Beste']};
+  function pcModeFmt(k,v){if(v==null)return '–';if(k==='atc'||k==='killer'||k==='ch'||k==='dbl'||k==='bull')return pf.format(v)+' %';if(k==='k170')return pf.format(v)+' von 3';if(k==='x01'||k==='score')return fmtAvg(v);if(k==='cricket')return af.format(v);return fmt(Math.round(v));}
   function pcH2H(all){
     var map={}, order=[];
     all.forEach(function(x){
@@ -4195,7 +4229,7 @@ function botVisit(rest,DO,A){
   }
   $('setupWho').addEventListener('click',function(e){var b=e.target.closest('button[data-sw]');if(!b)return;if(b.dataset.sw!==players.active)switchPlayer(b.dataset.sw,true);renderSetupWho();});
 
-  var MODE_NAMES={x01:'X01',bobs:"Bob's 27",atc:'Around the Clock',k121:'121 Checkout',bull:'Bull',halve:'Halve-It',score:'Scoring',ch:'Challenge',cricket:'Cricket',shanghai:'Shanghai',killer:'Killer'};
+  var MODE_NAMES={x01:'X01',bobs:"Bob's 27",atc:'Around the Clock',k121:'121 Checkout',k170:'170',bull:'Bull',halve:'Halve-It',score:'Scoring',ch:'Challenge',cricket:'Cricket',shanghai:'Shanghai',killer:'Killer'};
   var MS_GAMES={x01:1,cricket:1,atc:1,halve:1,bobs:1,shanghai:1,killer:1};
   /* Einstellungen nur für einen Modus, ohne Auswahl anderer Spiele */
   function openSetupFor(k){
@@ -4325,6 +4359,7 @@ function botVisit(rest,DO,A){
   }
   function dartsOf(rec){
     if(rec.kind==='k121')return rec.darts!=null?rec.darts:rec.att*9;
+    if(rec.kind==='k170')return rec.darts||0;
     if(rec.kind==='halve'||rec.kind==='score')return rec.att*3;
     return rec.att||0;
   }
@@ -5431,6 +5466,26 @@ function botVisit(rest,DO,A){
 'Draussen':['Dehors','Outside','Dobaussen'],
 'Alle Doppel':['Tous les doubles','All doubles','All Duebelen'],
 'schwächste zuerst':['les plus faibles d\'abord','weakest first','schwächst als éischt'],
+'12, 9, 6 Darts gegen den Wixxer':['12, 9, 6 fléchettes contre le Wixxer','12, 9, 6 darts against the Wixxer','12, 9, 6 Darts géint de Wixxer'],
+'Checke 170 mit':['Fais 170 en','Check out 170 in','Check 170 mat'],
+'Stufe {0} von 3':['Niveau {0} sur 3','Stage {0} of 3','Stuf {0} vun 3'],
+'Wixxer':['Wixxer','Wixxer','Wixxer'],
+'{0} / 3':['{0} / 3','{0} / 3','{0} / 3'],
+'Gewonnen!':['Gagné !','Won!','Gewonnen!'],
+'Verloren':['Perdu','Lost','Verluer'],
+'gewonnen':['gagné','won','gewonnen'],
+'verloren':['perdu','lost','verluer'],
+'Du hast alle drei Stufen geschafft. Der Wixxer hat {0} von 4 Punkten.':['Tu as réussi les trois niveaux. Le Wixxer a {0} points sur 4.','You cleared all three stages. The Wixxer has {0} of 4 points.','Du hues all dräi Stufe gepackt. De Wixxer huet {0} vu 4 Punkten.'],
+'Du hast {0} von 3 Stufen geschafft, der Wixxer hat {1} Punkte.':['Tu as réussi {0} niveaux sur 3, le Wixxer a {1} points.','You cleared {0} of 3 stages, the Wixxer has {1} points.','Du hues {0} vun 3 Stufe gepackt, de Wixxer huet {1} Punkten.'],
+'Der Wixxer hat 4 Punkte. Du bist auf Stufe {0} hängen geblieben ({1} Darts).':['Le Wixxer a 4 points. Tu es resté bloqué au niveau {0} ({1} fléchettes).','The Wixxer has 4 points. You got stuck on stage {0} ({1} darts).','De Wixxer huet 4 Punkten. Du bass op der Stuf {0} hänke bliwwen ({1} Darts).'],
+'Du checkst immer 170 (Double-Out). Zuerst hast du 12 Darts, dann 9, dann 6. Schaffst du es, bekommst du einen Punkt und gehst eine Stufe weiter, auch wenn du weniger Darts gebraucht hast. Schaffst du es nicht, bekommt der Wixxer einen Punkt und du bleibst auf der Stufe. Checkst du mit höchstens 6 Darts, hast du gewonnen. Hat der Wixxer 4 Punkte, hast du verloren.':['Tu dois toujours finir 170 (double-out). D\'abord avec 12 fléchettes, puis 9, puis 6. Si tu réussis, tu marques un point et tu passes au niveau suivant, même avec moins de fléchettes. Sinon, le Wixxer marque un point et tu restes au même niveau. Si tu finis en 6 fléchettes au plus, tu as gagné. Si le Wixxer a 4 points, tu as perdu.','You always check out 170 (double-out). First you have 12 darts, then 9, then 6. If you make it, you get a point and move up a stage, even if you needed fewer darts. If you miss, the Wixxer gets a point and you stay on that stage. Check out in 6 darts or fewer and you win. If the Wixxer reaches 4 points, you lose.','Du checks ëmmer 170 (Double-Out). Fir d\'éischt hues du 12 Darts, dann 9, dann 6. Packs du et, kriss du e Punkt a gees eng Stuf weider, och wann s du manner Darts gebraucht hues. Packs du et net, kritt de Wixxer e Punkt an du bleiws op der Stuf. Checks du mat héchstens 6 Darts, hues du gewonnen. Huet de Wixxer 4 Punkten, hues du verluer.'],
+'Geschaffte Stufen pro Spiel':['Niveaux réussis par partie','Stages cleared per game','Gepackte Stufen pro Spill'],
+'Ø Stufen':['Ø niveaux','Avg stages','Ø Stufen'],
+'Am weitesten':['Le plus loin','Furthest','Am wäitsten'],
+'{0} von 3':['{0} sur 3','{0} of 3','{0} vun 3'],
+'Du : Wixxer':['Toi : Wixxer','You : Wixxer','Du : Wixxer'],
+'Stufen geschafft':['Niveaux réussis','Stages cleared','Stufe gepackt'],
+'Stufen':['Niveaux','Stages','Stufen'],
 'Schwächste zuerst':['Les plus faibles d\'abord','Weakest first','Schwächst als éischt'],
 'Schwächste Doppel':['Doubles les plus faibles','Weakest doubles','Schwächst Duebelen'],
 'Zu tief und Draussen zählen nur die Darts daneben.':['Trop bas et Dehors ne comptent que les fléchettes ratées.','Too low and Outside only count the missed darts.','Ze déif an Dobaussen zielen nëmmen d\'Darts dernieft.'],
@@ -6394,6 +6449,8 @@ function botVisit(rest,DO,A){
         $('crAvg').value=draft.cr.avg;
       }else if(draft.mode==='k121'){
         $('trainRules').textContent='Du hast 9 Darts, um 121 auszuchecken (Double-Out). Schaffst du es, geht es mit der nächsten Zahl weiter. Schaffst du es nicht, fällst du zurück auf 121. Checkst du mit 3 Darts, ist die nächste Zahl fest: Ab dann fällst du nur noch auf diese Zahl zurück. Nach jedem Versuch tippst du an, mit wie vielen Darts (3 bis 9) du gecheckt hast. Es geht so lange, bis du aufhörst.';
+      }else if(draft.mode==='k170'){
+        $('trainRules').textContent='Du checkst immer 170 (Double-Out). Zuerst hast du 12 Darts, dann 9, dann 6. Schaffst du es, bekommst du einen Punkt und gehst eine Stufe weiter, auch wenn du weniger Darts gebraucht hast. Schaffst du es nicht, bekommt der Wixxer einen Punkt und du bleibst auf der Stufe. Checkst du mit höchstens 6 Darts, hast du gewonnen. Hat der Wixxer 4 Punkte, hast du verloren.';
       }else if(draft.mode==='bull'){
         $('trainRules').textContent='Wirf aufs Bull und tipp pro Dart an: Daneben, Bull (25) oder Bullseye (50). Es geht so lange, bis du aufhörst. Am Ende siehst du deine Bull-Quote.';
       }else if(draft.mode==='score'){
