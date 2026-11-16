@@ -249,6 +249,7 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute
 .dblrow .lbl small{display:block;color:var(--mute);font-weight:500;font-size:12px}
 .dblbtns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .dblbtns button{height:52px;border-radius:10px;border:1px solid var(--line);background:var(--key);font-family:var(--display);font-weight:800;font-size:28px}
+.dblbtns button:disabled{opacity:.25}
 .dblbtns button[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:var(--board)}
 .opp{margin-bottom:12px}
 .opp-avg{display:flex;align-items:center;gap:10px;margin:-4px 0 12px}
@@ -401,6 +402,7 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute
 .bull-b{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .bull-b button{height:54px;border-radius:12px;background:var(--key);border:1px solid var(--line);font-family:var(--display);font-weight:800;font-size:22px;line-height:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .bull-b button small{font-family:var(--body);font-weight:500;font-size:11px;color:var(--mute)}
+.agf{display:flex;flex-direction:column;gap:8px;margin-top:10px}.agf .btn{width:100%;height:48px;font-size:16px}
 .bull-res{text-align:center;padding:14px 0 6px}
 .bull-res b{display:block;font-family:var(--display);font-size:40px;text-transform:uppercase;line-height:1.1}
 .bull-res small{color:var(--mute);font-size:14px}
@@ -1221,6 +1223,8 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute
   var REACH=[{0:1}];
   for(var k=1;k<=3;k++)REACH.push(sumsOf(REACH[k-1]));
   function visitPossible(n){return !!REACH[3][n];}
+  /* Wie viele Darts in einer Aufnahme höchstens aufs Doppel gehen können: 3 minus die Darts, die man vorher zum Stellen braucht */
+  function maxDblMiss(n){var m=minFinishDarts(n,true);return m==null||n>170?0:4-m;}
   function minFinishDarts(n,dbl){
     for(var d=1;d<=3;d++){
       if(!dbl){if(REACH[d][n])return d;}
@@ -1687,7 +1691,8 @@ function botVisit(rest,DO,A){
     var dr=$('dblRow'), da=dblActive()&&!done;
     dr.hidden=!da;
     if(da){
-      document.querySelectorAll('#dblBtns button').forEach(function(b){b.setAttribute('aria-pressed',String(parseInt(b.dataset.dm,10)===dblMiss));});
+      var mxd=maxDblMiss(state.start-totals().pts);if(dblMiss>mxd)dblMiss=mxd;
+      document.querySelectorAll('#dblBtns button').forEach(function(b){var n=parseInt(b.dataset.dm,10);b.disabled=n>mxd;b.setAttribute('aria-pressed',String(n===dblMiss));});
       $('dblInfo').textContent='Doppelquote bisher: '+dblText(s.dblHit,s.dblAtt);
     }
     $('play').hidden=done;
@@ -4573,7 +4578,11 @@ function botVisit(rest,DO,A){
     $('bullBody').innerHTML=h;
   }
   $('bullBody').addEventListener('click',function(e){
-    var b=e.target.closest('button');if(!b||!BULL)return;
+    var b=e.target.closest('button');if(!b)return;
+    if(b.dataset.agf!=null&&M){var v=b.dataset.agf;
+      if(v==='bull'||v==='rand'){bullStart(v);return;}
+      M.legs[0].starter=+v;mSave();hide('ovBull');$('bullTitle').textContent='Wer fängt an?';renderMatch();mMaybeBot();return;}
+    if(!BULL)return;
     if(b.id==='bullGo'){if(!M.legs[0].vs.length)M.legs[0].starter=BULL.winner;BULL=null;hide('ovBull');mSave();openMatch();return;}
     if(b.dataset.bull!=null){var i=bullNext();if(i!=null&&!M.ps[i].bot)bullThrow(i,+b.dataset.bull);}
   });
@@ -5165,7 +5174,8 @@ function botVisit(rest,DO,A){
           h+='<button class="nb b25" type="button" data-mxn="25" data-mxm="1">25</button><button class="nb b50" type="button" data-mxn="25" data-mxm="2">Bull</button><button class="nb miss" type="button" data-mxn="0" style="grid-column:span 2;font-size:16px">Daneben</button></div>';
         }else{
           var dblOn=M.DO&&r<=170&&minFinishDarts(r,true)!=null&&settings.dblAsk!==false;
-          if(dblOn)h+='<div class="dblrow"><div class="lbl">Darts aufs Doppel daneben</div><div class="dblbtns">'+[0,1,2,3].map(function(n){return '<button type="button" data-mdm="'+n+'" aria-pressed="'+(n===mDbl)+'">'+n+'</button>';}).join('')+'</div></div>';
+          var mxd=maxDblMiss(r);if(mDbl>mxd)mDbl=mxd;
+          if(dblOn)h+='<div class="dblrow"><div class="lbl">Darts aufs Doppel daneben</div><div class="dblbtns">'+[0,1,2,3].map(function(n){return '<button type="button" data-mdm="'+n+'"'+(n>mxd?' disabled':'')+' aria-pressed="'+(n===mDbl)+'">'+n+'</button>';}).join('')+'</div></div>';
           var raw=mInput===''?null:parseInt(mInput,10), bad=mWarnTxt||(raw!=null&&(raw>180?'Höchstens 180':!visitPossible(raw)?'Mit 3 Darts nicht möglich':''));
           var notIn=M.DI&&!mIsIn(leg,turn);
           h+='<div class="display mx'+(bad?' err':'')+'"><div class="val'+(mInput===''?' empty':'')+'">'+(mInput===''?'–':mInput)+'</div><div class="hint-line'+(bad?' warn':'')+'">'+(bad||(notIn?'Double-In: nur Punkte ab dem ersten Doppel':''))+'</div></div>';
@@ -5297,8 +5307,18 @@ function botVisit(rest,DO,A){
     if(M&&M.ev){var eid=M.ev.id;M=null;mSave();closeMatch();evOpen(eid);return;}
     var o=M;
     M={id:newId(),game:o.game,variant:o.variant,lives:o.lives,nums:o.game==='killer'?killerNums(o.ps.length):o.nums,showCo:o.showCo,DI:o.DI,start:o.start,DO:o.DO,legsTo:o.legsTo,setsTo:o.setsTo,ps:o.ps,legs:[{starter:(o.legs[0].starter+1)%o.ps.length,vs:[],winner:null}],done:false,startedAt:Date.now()};
-    mInput='';mDbl=0;mPend=null;mCur=[];mCrMult=1;mSave();renderMatch();mMaybeBot();
+    mInput='';mDbl=0;mPend=null;mCur=[];mCrMult=1;mSave();renderMatch();
+    if(M.ps.length>1&&M.game!=='killer'){agfAsk();return;}
+    mMaybeBot();
   });
+  /* Revanche: kleines Fenster in der Mitte, wer anfängt */
+  function agfAsk(){
+    BULL=null;$('bullTitle').textContent='Wer fängt an?';
+    var def=M.legs[0].starter;
+    $('bullBody').innerHTML='<div class="agf">'+M.ps.map(function(p,i){return '<button type="button" class="btn'+(i===def?' primary':'')+'" data-agf="'+i+'">'+esc(mName(i))+'</button>';}).join('')+
+      '<button type="button" class="btn" data-agf="bull">Ausbullen</button><button type="button" class="btn" data-agf="rand">Zufall</button></div>';
+    show('ovBull');
+  }
   $('mHome').addEventListener('click',function(){M=null;mSave();closeMatch();showHome();});
   $('homeTrain').addEventListener('click',function(){
     var r=loadRun();if(!r||r.done){renderHome();return;}
@@ -5486,6 +5506,7 @@ function botVisit(rest,DO,A){
 'Du : Wixxer':['Toi : Wixxer','You : Wixxer','Du : Wixxer'],
 'Stufen geschafft':['Niveaux réussis','Stages cleared','Stufe gepackt'],
 'Stufen':['Niveaux','Stages','Stufen'],
+'daneben':['raté','miss','laanscht'],
 'Schwächste zuerst':['Les plus faibles d\'abord','Weakest first','Schwächst als éischt'],
 'Schwächste Doppel':['Doubles les plus faibles','Weakest doubles','Schwächst Duebelen'],
 'Zu tief und Draussen zählen nur die Darts daneben.':['Trop bas et Dehors ne comptent que les fléchettes ratées.','Too low and Outside only count the missed darts.','Ze déif an Dobaussen zielen nëmmen d\'Darts dernieft.'],
