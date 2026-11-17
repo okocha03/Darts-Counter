@@ -740,12 +740,11 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute
       <button class="key" type="button" data-k="7">7</button>
       <button class="key" type="button" data-k="8">8</button>
       <button class="key" type="button" data-k="9">9</button>
-      <button class="key sm" type="button" id="keyBack" aria-label="Letzte Ziffer löschen">
+      <button class="key" type="button" id="keyBack" aria-label="Letzte Ziffer löschen">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 5H9l-6 7 6 7h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z"/><path d="m16 9-5 6"/><path d="m11 9 5 6"/></svg>
       </button>
-      <button class="key sm miss" type="button" id="keyMiss" aria-label="Aufnahme ohne Punkte eintragen">Daneben</button>
-      <button class="key sm" type="button" data-k="0">0</button>
-      <button class="key sm ok" type="button" id="keyOk">Eintragen</button>
+      <button class="key" type="button" data-k="0">0</button>
+      <button class="key ok" type="button" id="keyOk">Eintragen</button>
     </div>
     </div>
   </section>
@@ -2900,10 +2899,9 @@ function botVisit(rest,DO,A){
     h+='<div class="display'+(trWarn?' err':'')+'"><div class="dl"><div class="lab">'+label+'</div><div class="hint-line'+(trWarn?' warn':'')+'">'+(trWarn||hint)+'</div></div>'+
       '<div class="val'+(trNum===''?' empty':'')+'">'+(trNum===''?'–':trNum)+'</div></div>';
     h+='<div class="pad">'+[1,2,3,4,5,6,7,8,9].map(function(n){return '<button class="key" type="button" data-k="'+n+'">'+n+'</button>';}).join('')+
-      '<button class="key sm" type="button" data-act="back" aria-label="Letzte Ziffer löschen">⌫</button>'+
-      '<button class="key sm miss" type="button" data-act="zero">0 Punkte</button>'+
-      '<button class="key sm" type="button" data-k="0">0</button>'+
-      '<button class="key sm ok" type="button" data-act="ok">Eintragen</button></div></div>';
+      '<button class="key" type="button" data-act="back" aria-label="Letzte Ziffer löschen">⌫</button>'+
+      '<button class="key" type="button" data-k="0">0</button>'+
+      '<button class="key ok" type="button" data-act="ok">Eintragen</button></div></div>';
     return h;
   }
   function xSubmit(n){
