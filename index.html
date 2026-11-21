@@ -4610,7 +4610,7 @@ function botVisit(rest,DO,A){
   });
   $('mDO').addEventListener('change',function(){mDraft.DO=$('mDO').checked;});
   $('msBack').addEventListener('click',function(){
-    if(mDraft.step==='who'){keepBotAvg();mDraft.step='opts';renderMatchSetup();$('mSetup').scrollTop=0;return;}
+    if(mDraft&&mDraft.step==='who'){try{keepBotAvg();}catch(e){}mDraft.step='opts';renderMatchSetup();$('mSetup').scrollTop=0;return;}
     closeMatchSetup();showHome();
   });
   $('msChoose').addEventListener('click',function(e){
@@ -6862,6 +6862,26 @@ function botVisit(rest,DO,A){
         });
       });
     }).catch(function(){}).then(function(){renderBk();});
+  })();
+  /* Sicherheitsnetz: Ein Zurück-Pfeil muss immer etwas tun. Ändert sich nach dem Tippen nichts, geht es zur Startseite (laufende Spiele bleiben gespeichert). */
+  (function(){
+    var IDS=['home','mSetup','match','train','settings','pcView','evView','dblView','ovSetup','ovHistory','ovPlayers','ovFinish','app'];
+    function sig(){
+      return IDS.map(function(id){var e=$(id);return e&&!e.hidden?id:'';}).join(',')+'|'+(document.body.innerText||'');
+    }
+    var seq=0;
+    document.addEventListener('click',function(e){
+      seq++;
+      var b=e.target&&e.target.closest&&e.target.closest('.back-btn');if(!b)return;
+      var before=sig(), my=seq;
+      setTimeout(function(){
+        if(seq!==my||sig()!==before)return;
+        try{if(!$('match').hidden)closeMatch();}catch(x){$('match').hidden=true;}
+        try{if(!$('train').hidden){if(run&&!run.done)saveRun();closeTrain();}}catch(x){$('train').hidden=true;}
+        ['mSetup','settings','pcView','evView','dblView','ovSetup','ovHistory','ovPlayers','ovFinish','ovBull'].forEach(function(id){var x=$(id);if(x)x.hidden=true;});
+        try{showHome();}catch(x){$('home').hidden=false;}
+      },150);
+    },true);
   })();
   /* Einpassen: in Spielen und Trainings soll nie gescrollt werden. Passt der Inhalt knapp nicht, wird er leicht verkleinert. */
   (function(){
