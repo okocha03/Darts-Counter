@@ -2315,8 +2315,8 @@ function botVisit(rest,DO,A){
   var QUICK=['D20','Bull','170','T20','D16','T19','100'];
   var run=null, tick=null, wake=null;
 
-  var ATC={any:{name:'Alle Felder',pre:'',end:21},D:{name:'Nur Doppel',pre:'D',end:21},T:{name:'Nur Triple',pre:'T',end:20}};
-  function atcLabel(v,i){return i>=20?(v==='D'?'Bull (50)':'Bull'):ATC[v].pre+(i+1);}
+  var ATC={any:{name:'Alle Felder',pre:'',end:21},S:{name:'Nur Single',pre:'S',end:21},D:{name:'Nur Doppel',pre:'D',end:21},T:{name:'Nur Triple',pre:'T',end:20}};
+  function atcLabel(v,i){return i>=20?(v==='D'?'Bull (50)':v==='S'?'Bull (25)':'Bull'):ATC[v].pre+(i+1);}
   function atcCalc(r){
     var hits=0;r.seq.forEach(function(x){hits+=x;});
     var end=ATC[r.variant].end;
@@ -4814,10 +4814,10 @@ function botVisit(rest,DO,A){
     if(g==='atc'){
       var pos=me.sc, end=c.end, hits=0, vr=M.variant||'any';
       for(k=0;k<3&&pos<end;k++){
-        if(pos>=20){o=throwAt({m:50},s);if(vr==='D'?o.v===50:(o.v===50||o.v===25)){pos++;hits++;}continue;}
+        if(pos>=20){o=throwAt({m:50},s);if(vr==='D'?o.v===50:vr==='S'?o.v===25:(o.v===50||o.v===25)){pos++;hits++;}continue;}
         var n=pos+1;
         o=throwAt(vr==='D'?{m:2,n:n}:vr==='T'?{m:3,n:n}:{m:1,n:n},s);
-        var ok=vr==='D'?o.l==='D'+n:vr==='T'?o.l==='T'+n:(o.l==='S'+n||o.l==='T'+n||o.l==='D'+n);
+        var ok=vr==='D'?o.l==='D'+n:vr==='T'?o.l==='T'+n:vr==='S'?o.l==='S'+n:(o.l==='S'+n||o.l==='T'+n||o.l==='D'+n);
         if(ok){pos++;hits++;}
       }
       return {p:p,x:hits};
@@ -5505,6 +5505,7 @@ function botVisit(rest,DO,A){
 'Stufen geschafft':['Niveaux réussis','Stages cleared','Stufe gepackt'],
 'Stufen':['Niveaux','Stages','Stufen'],
 'daneben':['raté','miss','laanscht'],
+'Nur Single':['Simples seulement','Singles only','Just Single'],
 'Schwächste zuerst':['Les plus faibles d\'abord','Weakest first','Schwächst als éischt'],
 'Schwächste Doppel':['Doubles les plus faibles','Weakest doubles','Schwächst Duebelen'],
 'Zu tief und Draussen zählen nur die Darts daneben.':['Trop bas et Dehors ne comptent que les fléchettes ratées.','Too low and Outside only count the missed darts.','Ze déif an Dobaussen zielen nëmmen d\'Darts dernieft.'],
