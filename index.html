@@ -58,6 +58,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .scale{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 12px;font-size:12px;color:var(--mute);margin-top:7px}
 
 .stats{display:grid;grid-template-columns:1.35fr 1fr 1fr 1fr;gap:8px}
+.stats.three{grid-template-columns:1.35fr 1fr 1fr}
 .tile{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 10px;min-width:0}
 .tile.main{border-color:var(--red)}
 .tile .k{font-size:11.5px;color:var(--mute);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -682,7 +683,7 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute
 
   <section class="stats" aria-label="Average und Statistik">
     <div class="tile main"><div class="k">Ø 3 Darts</div><div class="v" id="tAvg3">–</div></div>
-    <div class="tile"><div class="k">Ø / Dart</div><div class="v" id="tAvg1">–</div></div>
+    <div class="tile" id="tAvg1T"><div class="k" id="tAvg1K">Ø / Dart</div><div class="v" id="tAvg1">–</div></div>
     <div class="tile"><div class="k">Aufnahmen</div><div class="v" id="tN">0</div></div>
     <div class="tile"><div class="k">Beste</div><div class="v" id="tBest">–</div></div>
   </section>
@@ -1667,7 +1668,13 @@ function botVisit(rest,DO,A){
     $('scaleR').textContent=down?'Ziel 0':(state.target?'Ziel '+fmt(state.target):'');
 
     $('tAvg3').textContent=fmtAvg(s.avg3);
-    $('tAvg1').textContent=fmtAvg(s.avg1);
+    /* Hochzählen mit Ziel: statt Ø pro Dart die erwartete Anzahl Aufnahmen bis zum Ziel (hängt vom Average ab) */
+    var upT=!down&&state.target, a1t=$('tAvg1T');
+    a1t.hidden=!down&&!state.target;$('tAvg1T').parentNode.classList.toggle('three',!down&&!state.target);
+    if(upT){
+      $('tAvg1K').textContent='Erwartet';
+      $('tAvg1').textContent=done?fmt(s.n):s.avg3>0?fmt(s.n+Math.ceil(Math.max(0,state.target-t.pts)/s.avg3)):'–';
+    }else{$('tAvg1K').textContent='Ø / Dart';$('tAvg1').textContent=fmtAvg(s.avg1);}
     $('tN').textContent=fmt(s.n);
     $('tBest').textContent=s.best==null?'–':fmt(s.best);
 
@@ -5676,6 +5683,7 @@ function botVisit(rest,DO,A){
 'kein Ziel':['sans objectif','no target','keen Zil'],
 'Ø {0} Darts':['Ø {0} fléchettes','{0}-dart avg','Ø {0} Darts'],
 'Ø / Dart':['Ø / fléchette','Avg / dart','Ø / Dart'],
+'Erwartet':['Prévu','Expected','Erwaart'],
 'Aufnahmen':['Volées','Visits','Opnamen'],
 'Aufnahme':['Volée','Visit','Opnam'],
 'Beste':['Meilleure','Best','Bescht'],
