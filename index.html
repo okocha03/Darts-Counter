@@ -59,6 +59,22 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 
 .stats{display:grid;grid-template-columns:1.35fr 1fr 1fr 1fr;gap:8px}
 .stats.three{grid-template-columns:1.35fr 1fr 1fr}
+.wheels{margin-top:6px}
+.wh-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.wh-col{position:relative;opacity:.45;transition:opacity .15s}
+.wh-col.act{opacity:1}
+.wh-h{text-align:center;font-weight:700;font-size:15px;padding:4px 0 6px;cursor:pointer}
+.wh-col.act .wh-h{color:var(--amber)}
+.wheel{height:132px;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;border-radius:14px;background:var(--key);-webkit-mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent);mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent)}
+.wheel::-webkit-scrollbar{display:none}
+.wh-pad{height:44px}
+.wh-it{height:44px;line-height:44px;text-align:center;scroll-snap-align:center;font-size:18px;font-weight:600;color:var(--mute);cursor:pointer}
+.wh-it.on{color:var(--chalk);font-size:22px;font-weight:800}
+.wh-band{position:absolute;left:0;right:0;bottom:44px;height:44px;border-top:1px solid var(--amber);border-bottom:1px solid var(--amber);pointer-events:none;opacity:0}
+.wh-col.act .wh-band{opacity:.7}
+.wh-extra{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.wh-extra button{height:44px;border-radius:12px;border:1px solid var(--line);background:var(--key);color:var(--chalk);font:inherit;font-weight:700}
+.wh-extra button[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:#fff}
 .tile{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 10px;min-width:0}
 .tile.main{border-color:var(--red)}
 .tile .k{font-size:11.5px;color:var(--mute);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -773,7 +789,7 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute
       <button class="mode-btn" id="modeAtc" type="button" aria-pressed="false">Around the Clock</button>
       <button class="mode-btn" id="modeK121" type="button" aria-pressed="false">121 Checkout</button>
       <button class="mode-btn" id="modeHalve" type="button" aria-pressed="false">Halve-It</button>
-      <button class="mode-btn" id="modeScore" type="button" aria-pressed="false">Scoring</button>
+      <button class="mode-btn" id="modeScore" type="button" aria-pressed="false">99 Darts</button>
       <button class="mode-btn" id="modeCricket" type="button" aria-pressed="false">Cricket</button>
       <button class="mode-btn" id="modeCh" type="button" aria-pressed="false">Challenge</button>
     </div>
@@ -907,7 +923,7 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute
         <button class="mtile" type="button" data-hk="k121"><span class="nm">121 Checkout</span><span class="who">Checkout üben</span></button>
         <button class="mtile" type="button" data-hk="k170"><span class="nm">170</span><span class="who">12, 9, 6 Darts gegen den Wixxer</span></button>
         <button class="mtile" type="button" data-hk="dbl"><span class="nm">Doppel</span><span class="who">D1–D20 und Bull</span></button>
-        <button class="mtile" type="button" data-hk="score"><span class="nm">Scoring 99</span><span class="who">99 Darts auf ein Triple</span></button>
+        <button class="mtile" type="button" data-hk="score"><span class="nm">99 Darts</span><span class="who">Jedes Feld zählt, Zielfeld frei wählbar</span></button>
         <button class="mtile" type="button" data-hk="up"><span class="nm">Hochzählen</span><span class="who">Punkte sammeln, z. B. bis 100.000</span></button>
         <button class="mtile" type="button" data-hk="bull"><span class="nm">Bull</span><span class="who">Daneben, Bull, Bullseye</span></button>
         <button class="mtile" type="button" data-hk="ch"><span class="nm">Challenge</span><span class="who">Eigene Aufgaben mit Zeit</span></button>
@@ -1425,7 +1441,7 @@ function botVisit(rest,DO,A){
         if(h.lastAtc==='any'||h.lastAtc==='D'||h.lastAtc==='T')hist.lastAtc=h.lastAtc;
         if(h.last121===10||h.last121===20)hist.last121=h.last121;
         if(h.lastCr&&(h.lastCr.mode==='solo'||h.lastCr.mode==='bot'))hist.lastCr=h.lastCr;
-        if(h.lastScore==='T20'||h.lastScore==='T19'||h.lastScore==='T18')hist.lastScore=h.lastScore;
+        if(typeof h.lastScore==='string'&&/^([TDS]([1-9]|1[0-9]|20)|-|B)$/.test(h.lastScore))hist.lastScore=h.lastScore;
       }
       if(h&&h.daily&&typeof h.daily==='object'&&!Array.isArray(h.daily))hist.daily=h.daily;
       if(h&&typeof h.weekGoal==='number'&&h.weekGoal>0)hist.weekGoal=h.weekGoal;
@@ -2789,6 +2805,11 @@ function botVisit(rest,DO,A){
   /* ===== Weitere Trainings: 121 Checkout, Halve-It, Scoring ===== */
   var HALVE=[{l:'20',max:180},{l:'16',max:180},{l:'Doppel',max:120},{l:'19',max:180},{l:'Triple',max:180},{l:'18',max:180},{l:'17',max:180},{l:'Bull',max:150}];
   var SCORE_VISITS=33;
+  /* 99 Darts: Zielfeld 'T20', 'D7', 'S5' oder '-' (kein Feld, nur Punkte) */
+  function sfNone(t){return !t||t==='-';}
+  function sfVal(t){if(sfNone(t))return 0;if(t==='B')return 50;var n=parseInt(t.slice(1),10);return n*(t[0]==='T'?3:t[0]==='D'?2:1);}
+  function sfName(t){return sfNone(t)?'kein Feld':t==='B'?'Bull':t;}
+  function sfTitle(t){return sfNone(t)?'99 Darts':'99 Darts · '+sfName(t);}
   var trNum='', trTrip=0, trWarn='';
   /* Bull-Training: pro Dart 0 (daneben), 25 (Bull) oder 50 (Bullseye), ohne Ende */
   function bullCalc(r){
@@ -2872,9 +2893,9 @@ function botVisit(rest,DO,A){
     bull:{name:function(){return 'Bull-Training';},value:function(r){return r.att?r.hits/r.att*100:null;},
       fmt:function(v){return v==null?'–':pf.format(v)+' %';},unit:'Bull-Quote',title:'Bull-Quote pro Training',tile:'Ø Bull-Quote',
       result:function(r){return r.hits+'/'+r.att+' · '+(r.att?Math.round(r.hits/r.att*100):0)+' %';},status:function(){return 'fertig';}},
-    score:{name:function(r){return 'Scoring '+r.target;},value:function(r){return r.att?r.pts/(r.att*3)*3:null;},
+    score:{name:function(r){return sfTitle(r.target);},value:function(r){return r.att?r.pts/(r.att*3)*3:null;},
       fmt:function(v){return fmtAvg(v);},unit:'Ø',title:'Ø 3 Darts pro Session',tile:'Ø 3 Darts',
-      result:function(r){return 'Ø '+fmtAvg(r.att?r.pts/r.att:null)+' · Triples '+(r.att?pf.format(r.tri/(r.att*3)*100):'–')+' %';},status:function(r){return r.early?'abgebrochen':'99 Darts';}}
+      result:function(r){return 'Ø '+fmtAvg(r.att?r.pts/r.att:null)+(sfNone(r.target)?'':' · '+sfName(r.target)+' '+(r.att?pf.format(r.tri/(r.att*3)*100):'–')+' %');},status:function(r){return r.early?'abgebrochen':'99 Darts';}}
   };
   function xkKey(r){return r.kind==='party'?'party:'+r.game:r.kind==='score'?'score:'+r.target:r.kind==='cricket'?'cricket:'+r.mode:r.kind;}
   function xkOf(key){return XK[key.split(':')[0]]||null;}
@@ -2903,7 +2924,7 @@ function botVisit(rest,DO,A){
   }
   function padHtml(label,hint,trip){
     var h='<div class="tr-padwrap">';
-    if(trip)h+='<div class="dblrow"><div class="lbl">Triples in dieser Aufnahme</div><div class="dblbtns">'+
+    if(trip)h+='<div class="dblrow"><div class="lbl">'+(trip===true?'Triples in dieser Aufnahme':'Treffer auf dem Feld')+'</div><div class="dblbtns">'+
       [0,1,2,3].map(function(n){return '<button type="button" data-tr="'+n+'" aria-pressed="'+(n===trTrip)+'">'+n+'</button>';}).join('')+'</div></div>';
     h+='<div class="display'+(trWarn?' err':'')+'"><div class="dl"><div class="lab">'+label+'</div><div class="hint-line'+(trWarn?' warn':'')+'">'+(trWarn||hint)+'</div></div>'+
       '<div class="val'+(trNum===''?' empty':'')+'">'+(trNum===''?'–':trNum)+'</div></div>';
@@ -2921,6 +2942,8 @@ function botVisit(rest,DO,A){
       run.seq.push(n);
     }else{
       if(n>180||!visitPossible(n)){trWarn=n>180?'Höchstens 180':'Mit 3 Darts nicht möglich';renderTrain();return;}
+      var fv=sfVal(run.target);if(sfNone(run.target))trTrip=0;
+      if(trTrip&&(n<trTrip*fv||n-trTrip*fv>(3-trTrip)*60)){trWarn=trTrip+'× '+sfName(run.target)+' passt nicht zu '+n;renderTrain();return;}
       run.seq.push({p:n,t:trTrip});
     }
     trNum='';trTrip=0;
@@ -2979,14 +3002,15 @@ function botVisit(rest,DO,A){
       morph(acts,hvPad(tg.l,run.hc||[],hc.score));
     }else{
       var sc=scoreCalc(run);
-      $('trTitle').textContent='Scoring '+run.target;
+      var sfn=sfNone(run.target);
+      $('trTitle').textContent=sfTitle(run.target);
       $('trBigLabel').textContent='Ø 3 Darts';
       $('trBigRight').textContent='Aufnahme '+Math.min(run.seq.length+1,SCORE_VISITS)+' von '+SCORE_VISITS;
       big.textContent=fmtAvg(sc.avg);
-      $('trTarget').innerHTML=run.done?'':'<b>'+run.target+'</b>99 Darts, Punkte und Triples pro Aufnahme eintragen';
-      $('trStats').innerHTML=tile('Triple-Quote',fmtPct(sc.trate),true)+tile('Punkte',fmt(sc.pts))+tile('Darts',fmt(sc.darts))+tile('Rekord',XK.score.fmt(trainBest('score:'+run.target)));
+      $('trTarget').innerHTML=run.done?'':sfn?'<b>99 Darts</b>Jedes Feld zählt, Punkte pro Aufnahme eintragen':'<b>'+sfName(run.target)+'</b>Jedes Feld zählt, Punkte und Treffer eintragen';
+      $('trStats').innerHTML=(sfn?tile('Ø / Dart',fmtAvg(sc.darts?sc.pts/sc.darts:null),true):tile('Trefferquote',fmtPct(sc.trate),true))+tile('Punkte',fmt(sc.pts))+tile('Darts',fmt(sc.darts))+tile('Rekord',XK.score.fmt(trainBest('score:'+run.target)));
       acts.className='tr-actions one';
-      morph(acts,padHtml('Aufnahme '+(run.seq.length+1),'Punkte dieser Aufnahme',true));
+      morph(acts,padHtml('Aufnahme '+(run.seq.length+1),'Punkte dieser Aufnahme',sfn?false:sfName(run.target)));
     }
     if(run.done){
       var r=run.rec||{};
@@ -3005,7 +3029,7 @@ function botVisit(rest,DO,A){
         $('trDoneText').textContent='Endstand '+fmt(r.score)+', '+r.hits+' von '+r.att+' Zielen getroffen.'+(run.record?' Neuer Rekord!':'');
       }else{
         $('trDoneTitle').textContent=r.early?'Beendet':'99 Darts geschafft';
-        $('trDoneText').textContent='Ø '+fmtAvg(r.att?r.pts/r.att:null)+' auf '+run.target+', '+fmt(r.pts)+' Punkte, '+r.tri+' Triples ('+fmtPct(r.att?r.tri/(r.att*3)*100:null)+').'+(run.record?' Neuer Rekord!':'');
+        $('trDoneText').textContent='Ø '+fmtAvg(r.att?r.pts/r.att:null)+', '+fmt(r.pts)+' Punkte'+(sfNone(run.target)?'':', '+r.tri+'× '+sfName(run.target)+' ('+fmtPct(r.att?r.tri/(r.att*3)*100:null)+')')+'.'+(run.record?' Neuer Rekord!':'');
       }
     }
   }
@@ -3373,7 +3397,7 @@ function botVisit(rest,DO,A){
   /* ===== Startseite mit Spielmodi im Kreis ===== */
   var WHEEL=[
     {k:'cricket',l:['Cricket']},{k:'bobs',l:["Bob's 27"]},{k:'atc',l:['Around','the Clock']},{k:'k121',l:['121','Checkout']},
-    {k:'halve',l:['Halve-It']},{k:'score',l:['Scoring','99 Darts']},{k:'ch',l:['Challenge']},{k:'hist',l:['Verlauf','Statistik']}
+    {k:'halve',l:['Halve-It']},{k:'score',l:['99 Darts']},{k:'ch',l:['Challenge']},{k:'hist',l:['Verlauf','Statistik']}
   ];
   function polar(r,deg){var a=deg*Math.PI/180;return [200+r*Math.cos(a),200+r*Math.sin(a)];}
   function sector(r1,r2,a1,a2){
@@ -3937,7 +3961,7 @@ function botVisit(rest,DO,A){
       var d=bw(r.dbf);
       it=[['Quote',pc(r.hits,r.att)],['Treffer',r.hits+' von '+r.att],['Bestes Doppel',d[0]],['Schwächstes Doppel',d[1]],['Zu tief',fmt(r.sgl||0)],['Draussen',fmt(r.out||0)]];
     }else if(k==='score'){
-      it=[['Ø 3 Darts',fmtAvg(r.att?r.pts/r.att:null)],['Triples',fmt(r.tri||0)],['Triple-Quote',pc(r.tri||0,(r.att||0)*3)]];
+      it=[['Ø 3 Darts',fmtAvg(r.att?r.pts/r.att:null)]].concat(sfNone(r.target)?[['Punkte',fmt(r.pts||0)]]:[['Zielfeld',sfName(r.target)],['Treffer',fmt(r.tri||0)],['Trefferquote',pc(r.tri||0,(r.att||0)*3)]]);
       if(r.c100!=null)it=it.concat([['100+',r.c100],['140+',r.c140],['180',r.c180]]);
     }else if(k==='bobs'){
       var b=bw(r.dbf);
@@ -3970,7 +3994,7 @@ function botVisit(rest,DO,A){
     return '<button type="button" class="pc-g'+(best?' best':'')+'" data-pcg="'+esc(id)+'"><div class="row">'+(best?'<span class="res">★</span>':pcResOf(x))+
       '<span class="t"><span>'+esc(pcTitleOf(x))+'</span><small>'+esc(pcSubOf(x))+'</small></span><span class="v">'+pcValOf(x)+'</span></div>'+(pcOpenId===id+(best?'*':'')?pcDetail(x):'')+'</button>';
   }
-  var PC_MODES=[['x01','X01'],['cricket','Cricket'],['shanghai','Shanghai'],['killer','Killer'],['atc','Around the Clock'],['halve','Halve-It'],['bobs',"Bob's 27"],['k121','121 Checkout'],['k170','170'],['dbl','Doppel'],['bull','Bull'],['score','Scoring 99'],['ch','Challenge']];
+  var PC_MODES=[['x01','X01'],['cricket','Cricket'],['shanghai','Shanghai'],['killer','Killer'],['atc','Around the Clock'],['halve','Halve-It'],['bobs',"Bob's 27"],['k121','121 Checkout'],['k170','170'],['dbl','Doppel'],['bull','Bull'],['score','99 Darts'],['ch','Challenge']];
   function pcModeRecs(k,all){
     return all.filter(function(x){
       var r=x.r;
@@ -4241,7 +4265,7 @@ function botVisit(rest,DO,A){
   }
   $('setupWho').addEventListener('click',function(e){var b=e.target.closest('button[data-sw]');if(!b)return;if(b.dataset.sw!==players.active)switchPlayer(b.dataset.sw,true);renderSetupWho();});
 
-  var MODE_NAMES={x01:'X01',bobs:"Bob's 27",atc:'Around the Clock',k121:'121 Checkout',k170:'170',bull:'Bull',halve:'Halve-It',score:'Scoring',ch:'Challenge',cricket:'Cricket',shanghai:'Shanghai',killer:'Killer'};
+  var MODE_NAMES={x01:'X01',bobs:"Bob's 27",atc:'Around the Clock',k121:'121 Checkout',k170:'170',bull:'Bull',halve:'Halve-It',score:'99 Darts',ch:'Challenge',cricket:'Cricket',shanghai:'Shanghai',killer:'Killer'};
   var MS_GAMES={x01:1,cricket:1,atc:1,halve:1,bobs:1,shanghai:1,killer:1};
   /* Einstellungen nur für einen Modus, ohne Auswahl anderer Spiele */
   function openSetupFor(k){
@@ -5684,6 +5708,15 @@ function botVisit(rest,DO,A){
 'Ø {0} Darts':['Ø {0} fléchettes','{0}-dart avg','Ø {0} Darts'],
 'Ø / Dart':['Ø / fléchette','Avg / dart','Ø / Dart'],
 'Erwartet':['Prévu','Expected','Erwaart'],
+'99 Darts':['99 fléchettes','99 Darts','99 Darts'],
+'Jedes Feld zählt, Zielfeld frei wählbar':['Chaque case compte, cible au choix','Every field counts, pick any target','All Feld zielt, Zilfeld fräi wielbar'],
+'Du hast 99 Darts, also 33 Aufnahmen, und jedes Feld zählt. Wähl ein Zielfeld, dann trägst du pro Aufnahme die Punkte und die Treffer auf dem Feld ein. Mit „Kein Feld“ zählen nur die Punkte.':['Tu as 99 fléchettes, donc 33 volées, et chaque case compte. Choisis une cible, puis note par volée les points et les touches sur la cible. Avec « Aucune case », seuls les points comptent.','You have 99 darts, so 33 visits, and every field counts. Pick a target, then enter the points and the hits on the target for each visit. With “No field” only the points count.','Du hues 99 Darts, also 33 Opnamen, an all Feld zielt. Wiel en Zilfeld, dann dréins du pro Opnam d\'Punkten an d\'Treffer op dem Feld an. Mat „Kee Feld“ zielen nëmmen d\'Punkten.'],
+'Zielfeld':['Case cible','Target','Zilfeld'],
+'Kein Feld':['Aucune case','No field','Kee Feld'],
+'Treffer auf dem Feld':['Touches sur la cible','Hits on target','Treffer op dem Feld'],
+'Trefferquote':['Taux de touches','Hit rate','Trefferquot'],
+'Jedes Feld zählt, Punkte pro Aufnahme eintragen':['Chaque case compte, note les points par volée','Every field counts, enter points per visit','All Feld zielt, Punkten pro Opnam androen'],
+'Jedes Feld zählt, Punkte und Treffer eintragen':['Chaque case compte, note points et touches','Every field counts, enter points and hits','All Feld zielt, Punkten an Treffer androen'],
 'Aufnahmen':['Volées','Visits','Opnamen'],
 'Aufnahme':['Volée','Visit','Opnam'],
 'Beste':['Meilleure','Best','Bescht'],
@@ -5697,6 +5730,7 @@ function botVisit(rest,DO,A){
 'Aufnahme {0} von {1}':['Volée {0} sur {1}','Visit {0} of {1}','Opnam {0} vu {1}'],
 'max. {0}':['max. {0}','max {0}','max. {0}'],
 'Single':['Simple','Single','Single'],
+'Triple':['Triple','Triple','Triple'],
 'Daneben':['Raté','Miss','Laanscht'],
 'Diese Aufnahme:':['Cette volée :','This visit:','Dës Opnam:'],
 'Tippe pro Dart das getroffene Feld an':['Touche la case touchée pour chaque fléchette','Tap the field you hit for each dart','Tipp fir all Feil dat getraffent Feld un'],
@@ -6486,9 +6520,9 @@ function botVisit(rest,DO,A){
       }else if(draft.mode==='bull'){
         $('trainRules').textContent='Wirf aufs Bull und tipp pro Dart an: Daneben, Bull (25) oder Bullseye (50). Es geht so lange, bis du aufhörst. Am Ende siehst du deine Bull-Quote.';
       }else if(draft.mode==='score'){
-        $('trainRules').textContent='99 Darts auf ein Triple, also 33 Aufnahmen. Trag pro Aufnahme die Punkte und die Anzahl Triples ein. Am Ende siehst du deinen Ø und deine Triple-Quote.';
-        $('xLabel').textContent='Ziel';
-        $('xPick').innerHTML=['T20','T19','T18'].map(function(n){return '<button type="button" data-x="'+n+'" aria-pressed="'+(n===draft.xScore)+'">'+n+'</button>';}).join('');
+        $('trainRules').textContent='Du hast 99 Darts, also 33 Aufnahmen, und jedes Feld zählt. Wähl ein Zielfeld, dann trägst du pro Aufnahme die Punkte und die Treffer auf dem Feld ein. Mit „Kein Feld“ zählen nur die Punkte.';
+        $('xLabel').textContent='Zielfeld';
+        sfWheels();
       }else if(draft.mode==='halve'){
         $('trainRules').textContent='Du startest mit 40 Punkten. Pro Runde wirfst du 3 Darts auf ein Ziel: 20, 16, ein Doppel, 19, ein Triple, 18, 17 und Bull. Trag die Punkte ein, die du auf dem Ziel getroffen hast. Ohne Treffer wird dein Stand halbiert.';
       }else if(draft.mode==='atc'){
@@ -6671,7 +6705,37 @@ function botVisit(rest,DO,A){
   ['k121','halve','score','cricket'].forEach(function(k){
     $('mode'+(k==='k121'?'K121':k==='halve'?'Halve':k==='score'?'Score':'Cricket')).addEventListener('click',function(){setupValueToDraft();draft.mode=k;buildSetup();});
   });
+  /* Drehräder fürs Zielfeld (99 Darts): Triple / Doppel / Single je 1–20, dazu Bull und Kein Feld */
+  var SF_KIND=[['T','Triple'],['D','Doppel'],['S','Single']], SF_ROW=44;
+  function sfWheels(){
+    var t=draft.xScore||'T20';
+    if(!draft.sfN)draft.sfN={T:20,D:20,S:20};
+    if(/^[TDS]/.test(t))draft.sfN[t[0]]=parseInt(t.slice(1),10);
+    var nums=[];for(var i=1;i<=20;i++)nums.push(String(i));
+    var h='<div class="wh-cols">'+SF_KIND.map(function(x){var k=x[0],on=t[0]===k&&t!=='-';
+      return '<div class="wh-col'+(on?' act':'')+'" data-k="'+k+'"><div class="wh-h">'+x[1]+'</div><div class="wheel" id="wh'+k+'"><div class="wh-pad"></div>'+
+        nums.map(function(n,i){return '<div class="wh-it'+(i===draft.sfN[k]-1?' on':'')+'" data-i="'+i+'">'+n+'</div>';}).join('')+'<div class="wh-pad"></div></div><div class="wh-band" aria-hidden="true"></div></div>';}).join('')+'</div>'+
+      '<div class="wh-extra"><button type="button" data-sf="B" aria-pressed="'+(t==='B')+'">Bull</button><button type="button" data-sf="-" aria-pressed="'+(t==='-')+'">Kein Feld</button></div>';
+    $('xPick').className='wheels';$('xPick').innerHTML=h;
+    SF_KIND.forEach(function(x){
+      var k=x[0], w=$('wh'+k), tm=null, ready=false;w.scrollTop=(draft.sfN[k]-1)*SF_ROW;
+      setTimeout(function(){ready=true;},250);
+      w.addEventListener('scroll',function(){
+        var idx=Math.max(0,Math.min(19,Math.round(w.scrollTop/SF_ROW)));
+        [].forEach.call(w.querySelectorAll('.wh-it'),function(e,i){e.classList.toggle('on',i===idx);});
+        if(!ready)return;clearTimeout(tm);tm=setTimeout(function(){draft.sfN[k]=idx+1;sfSet(k+(idx+1));},120);
+      });
+      w.addEventListener('click',function(e){var it=e.target.closest('.wh-it');if(!it)return;draft.sfN[k]=+it.dataset.i+1;w.scrollTo({top:+it.dataset.i*SF_ROW,behavior:'smooth'});sfSet(k+draft.sfN[k]);});
+      w.parentNode.querySelector('.wh-h').addEventListener('click',function(){sfSet(k+draft.sfN[k]);});
+    });
+  }
+  function sfSet(t){
+    draft.xScore=t;
+    [].forEach.call(document.querySelectorAll('#xPick .wh-col'),function(c){c.classList.toggle('act',t[0]===c.dataset.k&&t!=='-');});
+    [].forEach.call(document.querySelectorAll('#xPick [data-sf]'),function(b){b.setAttribute('aria-pressed',String(b.dataset.sf===t));});
+  }
   $('xPick').addEventListener('click',function(e){
+    if(draft.mode==='score'){var sb=e.target.closest('[data-sf]');if(sb)sfSet(sb.dataset.sf);return;}
     var b=e.target.closest('button');if(!b)return;
     if(draft.mode==='k121')draft.x121=parseInt(b.dataset.x,10);
     else if(draft.mode==='cricket'){var ca=parseInt($('crAvg').value.replace(/\D/g,''),10);if(!isNaN(ca))draft.cr.avg=ca;draft.cr.mode=b.dataset.x;}
