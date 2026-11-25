@@ -420,6 +420,7 @@ h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute
 .bull-b{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .bull-b button{height:54px;border-radius:12px;background:var(--key);border:1px solid var(--line);font-family:var(--display);font-weight:800;font-size:22px;line-height:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .bull-b button small{font-family:var(--body);font-weight:500;font-size:11px;color:var(--mute)}
+.bull-skip{display:block;margin:12px auto 0;background:none;border:0;color:var(--mute);font:inherit;font-size:14px;text-decoration:underline;padding:8px}
 .agf{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.agf .btn{width:100%;height:auto;aspect-ratio:1/1;max-height:22vh;font-size:20px;font-weight:700;padding:8px;white-space:normal;overflow-wrap:anywhere;line-height:1.15;display:flex;align-items:center;justify-content:center;text-align:center}.agf.many .btn{aspect-ratio:auto;height:72px;font-size:17px}
 .bull-res{text-align:center;padding:14px 0 6px}
 .bull-res b{display:block;font-family:var(--display);font-size:40px;text-transform:uppercase;line-height:1.1}
@@ -3029,7 +3030,7 @@ function botVisit(rest,DO,A){
         $('trDoneText').textContent='Endstand '+fmt(r.score)+', '+r.hits+' von '+r.att+' Zielen getroffen.'+(run.record?' Neuer Rekord!':'');
       }else{
         $('trDoneTitle').textContent=r.early?'Beendet':'99 Darts geschafft';
-        $('trDoneText').textContent='Ø '+fmtAvg(r.att?r.pts/r.att:null)+', '+fmt(r.pts)+' Punkte'+(sfNone(run.target)?'':', '+r.tri+'× '+sfName(run.target)+' ('+fmtPct(r.att?r.tri/(r.att*3)*100:null)+')')+'.'+(run.record?' Neuer Rekord!':'');
+        $('trDoneText').textContent='Ø '+fmtAvg(r.att?r.pts/r.att:null)+' · '+fmt(r.pts)+' Punkte'+(sfNone(run.target)?'':' · Treffer '+r.tri+' ('+fmtPct(r.att?r.tri/(r.att*3)*100:null)+')')+(run.record?' · Neuer Rekord!':'');
       }
     }
   }
@@ -4582,9 +4583,10 @@ function botVisit(rest,DO,A){
   function bullNext(){for(var k=0;k<BULL.alive.length;k++)if(BULL.throws[BULL.alive[k]]==null)return BULL.alive[k];return null;}
   function bullBot(){
     var i=BULL&&BULL.winner==null?bullNext():null;if(i==null||!M.ps[i].bot)return;
-    setTimeout(function(){var a=M.ps[i].bot||50,r=Math.random();bullThrow(i,r<a/700?50:r<a/700+a/260?25:0);},700);
+    var B=BULL;setTimeout(function(){if(BULL!==B||!M||!M.ps[i])return;var a=M.ps[i].bot||50,r=Math.random();bullThrow(i,r<a/700?50:r<a/700+a/260?25:0);},700);
   }
   function bullThrow(i,v){
+    if(!BULL||BULL.winner!=null)return;
     BULL.throws[i]=v;
     if(bullNext()==null){
       var best=Math.max.apply(null,BULL.alive.map(function(j){return BULL.throws[j];}));
@@ -4608,10 +4610,13 @@ function botVisit(rest,DO,A){
           (now&&!M.ps[i].bot?'<div class="bull-b"><button type="button" data-bull="50">50<small>Bull</small></button><button type="button" data-bull="25">25<small>Single Bull</small></button><button type="button" data-bull="0">–<small>daneben</small></button></div>':'')+'</div>';
       });
     }
+    if(BULL.winner==null)h+='<button type="button" class="bull-skip" id="bullSkip">Überspringen</button>';
     $('bullBody').innerHTML=h;
   }
   $('bullBody').addEventListener('click',function(e){
     var b=e.target.closest('button');if(!b)return;
+    /* Überspringen: Fenster schliessen, es beginnt der vorgeschlagene Spieler */
+    if(b.id==='bullSkip'&&M){BULL=null;hide('ovBull');$('bullTitle').textContent='Wer fängt an?';mSave();if($('match').hidden)openMatch();else{renderMatch();mMaybeBot();}return;}
     if(b.dataset.agf!=null&&M){var v=b.dataset.agf;
       if(v==='bull'||v==='rand'){bullStart(v);return;}
       M.legs[0].starter=+v;mSave();hide('ovBull');$('bullTitle').textContent='Wer fängt an?';renderMatch();mMaybeBot();return;}
@@ -5349,7 +5354,7 @@ function botVisit(rest,DO,A){
     BULL=null;$('bullTitle').textContent='Wer fängt an?';
     var def=M.legs[0].starter;
     $('bullBody').innerHTML='<div class="agf'+(M.ps.length>4?' many':'')+'">'+M.ps.map(function(p,i){return '<button type="button" class="btn'+(i===def?' primary':'')+'" data-agf="'+i+'">'+esc(mName(i))+'</button>';}).join('')+
-      '<button type="button" class="btn" data-agf="bull">Ausbullen</button><button type="button" class="btn" data-agf="rand">Zufall</button></div>';
+      '<button type="button" class="btn" data-agf="bull">Ausbullen</button><button type="button" class="btn" data-agf="rand">Zufall</button></div><button type="button" class="bull-skip" id="bullSkip">Überspringen</button>';
     show('ovBull');
   }
   $('mHome').addEventListener('click',function(){M=null;mSave();closeMatch();showHome();});
@@ -5972,6 +5977,8 @@ function botVisit(rest,DO,A){
 'Doppel':['Double','Double','Duebel'],
 '{0} Punkte halbiert den Stand von {1}':['{0} point divise par deux le score de {1}','{0} points halves your {1}','{0} Punkten halbéieren d\'Punkte vu {1}'],
 '{0} Punkte':['{0} points','{0} points','{0} Punkten'],
+'Treffer {0} ({1})':['Touches {0} ({1})','Hits {0} ({1})','Treffer {0} ({1})'],
+'Treffer {0} ({1} %)':['Touches {0} ({1} %)','Hits {0} ({1} %)','Treffer {0} ({1} %)'],
 'Punkte':['Points','Points','Punkten'],
 'Alle starten mit {0}.':['Tous commencent à {0}.','Everyone starts on {0}.','Jiddereen fänkt mat {0} un.'],
 'Pro Runde {0} Darts auf D{1} bis D{2} und Bull.':['Par tour, {0} fléchettes sur D{1} à D{2}, puis le bull.','{0} darts per round at D{1} to D{2} and bull.','Pro Ronn {0} Darts op D{1} bis D{2} a Bull.'],
@@ -6082,6 +6089,7 @@ function botVisit(rest,DO,A){
 'höchster Checkout':['plus haut checkout','highest checkout','héchsten Checkout'],
 'Rekord':['Record','Record','Rekord'],
 'Neuer Rekord!':['Nouveau record !','New record!','Neie Rekord!'],
+'Überspringen':['Passer','Skip','Iwwersprangen'],
 'Session vorbei':['Session terminée','Session over','Sessioun eriwwer'],
 'Kein Checkout geschafft.':['Aucun checkout réussi.','No checkout made.','Keen Checkout gepackt.'],
 '{0} von {1} Versuchen geschafft.':['{0} essais réussis sur {1}.','{0} of {1} attempts made.','{0} vu {1} Versich gepackt.'],
